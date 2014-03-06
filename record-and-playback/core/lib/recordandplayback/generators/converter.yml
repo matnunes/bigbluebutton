@@ -1,0 +1,17 @@
+# @author Felipe Mathias Schmidt, PRAV - MConf (UFRGS)
+#
+# This file has all necessary parameters to record the presentations and export as ogv or
+# any other desirable format - just need to convert the output file.
+display_setting: 1400x768x24
+firefox_width: 1400
+firefox_height: 768
+xvfb_wait: 5
+play_button_x_position: 196
+play_button_y_position: 720
+record_window_width: 1184
+record_window_height: 560
+record_window_x_offset: 216
+record_window_y_offset: 148
+display_first_id: 97
+display_last_id: 98
+playback_link_prefix: "http://mconf-gravacao.ufrgs.br/playback/presentation/playback.html?meetingId="
