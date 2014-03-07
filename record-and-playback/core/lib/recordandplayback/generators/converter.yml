@@ -15,3 +15,4 @@ record_window_y_offset: 148
 display_first_id: 97
 display_last_id: 98
 playback_link_prefix: "http://mconf-gravacao.ufrgs.br/playback/presentation/playback.html?meetingId="
+ogg_file_path: "/var/bigbluebutton/published/presentation/"

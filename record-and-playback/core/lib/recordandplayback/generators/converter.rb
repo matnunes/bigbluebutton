@@ -3,7 +3,7 @@ $LOAD_PATH << path
 
 #require 'background_process'
 require 'audio'
-require 'yaml'
+require ''yaml''
 require 'thread'
 
 
@@ -14,9 +14,9 @@ module BigBlueButton
 
 		include Singleton
 
-
 		# Load yaml file with recording properties
 		$props = YAML::load(File.open('converter.yml'))
+		$bbb_props = YAML::load(File.open('../../../scripts/bigbluebutton.yml'))
 
 		def initialize
 			@virtual_displays = [*$props['display_first_id']..$props['display_last_id']]
@@ -164,18 +164,18 @@ module BigBlueButton
 
 		end
 
-		# This records and stores the video
+		# This converts a playback meeting
 		#
 		#   meeting_id - meeting id of video to be converted
 		def convert(meeting_id)
-			main_path = "/var/bigbluebutton/published/presentation/"
-			wav_file = "#{main_path}#{meeting_id}/audio/recording.wav"
+			# Path to ogg file of video to be recorded.
+			ogg_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
+			#wav_file = "/home/felipe/Downloads/file.wav" # For testing purposes
+			#ogg_file = "/home/felipe/Downloads/audio.ogg" # For testing purposes
 
-			# Path to wav file of video to be recorded.
-			file = "/home/felipe/Downloads/file.wav"
+			# Getting time in millis from wav file, will be the recording time
+			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(ogg_file)) / 1000
 
-			# Getting time in millis from wav file, will be the recording time (TODO: change 'file' to 'wav_file')
-			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(file)) / 1000
 
 			# Get a free display
 			display_id = self.get_display_id
