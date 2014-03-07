@@ -73,7 +73,7 @@ module BigBlueButton
       BigBlueButton.execute(command)
     end    
     
-    # Extracts the length of the audio file as reurned by running
+    # Extracts the length of the audio file as returned by running
     #   "sox <file> -n stat"
     # returns the lenght in millis if successful or -1 if it failed
     #
