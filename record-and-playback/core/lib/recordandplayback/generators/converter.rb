@@ -3,7 +3,7 @@ $LOAD_PATH << path
 
 #require 'background_process'
 require 'audio'
-require ''yaml''
+require 'yaml'
 require 'thread'
 
 
@@ -108,8 +108,9 @@ module BigBlueButton
 		#   display_id - unique id of virtual display to be used
 		#   seconds - seconds of video to be recorded
 		#   web_link - link of video to be recorded
-		def record_by_script(display_id, seconds, web_link)
-			command = "./scripts/convert.sh #{display_id} #{seconds} #{web_link}"
+		#   output_path - path to where the video file must be outputed
+		def record_by_script(display_id, seconds, web_link, output_path)
+			command = "./scripts/convert.sh #{display_id} #{seconds} #{web_link} #{output_path}"
 			BigBlueButton.logger.info("Task: Recording on display #{display_id} during #{seconds} seconds")
 			BigBlueButton.execute(command)
 		end
@@ -155,37 +156,66 @@ module BigBlueButton
 			return display_id
 		end
 
-		# TODO: this must append the .wav file to the recorded video
-		def append_audio_to_video(meeting_id)
-			meeting_id = "8794e81667fa76fe8eba9a15ac4bea9d4396068a-1386418010870"
-			main_path = "/var/bigbluebutton/published/presentation/"
-			wav_file = "#{main_path}#{meeting_id}/audio/recording.wav"
+		# This merges a audio.ogv video with a video.ogg audio file
+		#
+		# files_path - path where audio.ogg AND video.ogv are
+		def merge_video_and_audio(files_path)
+			BigBlueButton.logger.info("Merging .ogv video to .ogg audio")
+			command = "ffmpeg -i #{files_path}/video.ogv -i #{files_path}/audio.ogg -vcodec copy -acodec copy -acodec copy \
+			#{files_path}/video_and_audio.ogv"
+			BigBlueButton.execute(command)
+		end	
 
+		def ogv_to_avi(ogv_file_path)
+			BigBlueButton.logger.info("Converting .ogv to .avi")
+			command = "ffmpeg -i #{ogv_file_path}/video_and_audio.ogv #{ogv_file_path}/video_and_audio.avi"
+			BigBlueButton.execute(command)
 
+			command = "rm out.ogv"
+			BigBlueButton.execute(command)
 		end
 
-		# This converts a playback meeting
+		def create_done(meeting_id)
+			status_path = "#{$bbb_props['recording_dir']}/status/"
+			command = "touch #{status_path}convert/#{meeting_id}.done"
+			BigBlueButton.execute(command)
+		end
+
+		# This converts a playback meeting and outputs a out.avi file at bigbluebutton/published/download/#{meeting_id}
 		#
 		#   meeting_id - meeting id of video to be converted
 		def convert(meeting_id)
-			# Path to ogg file of video to be recorded.
-			ogg_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
-			#wav_file = "/home/felipe/Downloads/file.wav" # For testing purposes
-			#ogg_file = "/home/felipe/Downloads/audio.ogg" # For testing purposes
+			output_path = "#{$bbb_props['published_dir']}/download/#{meeting_id}"
+			audio_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
+			video_file = "#{output_path}/video.ogv"
+			web_link = "#{$bbb_props['playback_host']}#{$props['playback_link_prefix']}#{meeting_id}"
+			
+			# ogg_file = "#{$props['lxc_path']}#{ogg_file}"
 
 			# Getting time in millis from wav file, will be the recording time
-			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(ogg_file)) / 1000
+			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
 
+			BigBlueButton.logger.info("Creating #{output_path}")
+			command = "mkdir #{output_path}"
+			#BigBlueButton.execute(command)
 
 			# Get a free display
 			display_id = self.get_display_id
 
 			# Start the recording process
-			web_link = "#{$props['playback_link_prefix']}#{meeting_id}"
-			self.record_by_script(display_id, audio_lenght, web_link)
+	#		self.record_by_script(display_id, audio_lenght, web_link, video_file)			
 
 			# Free used virtual display
 			self.push_free_display(display_id)
+
+			# Append audio to video file
+			self.merge_video_and_audio(output_path)
+
+			# Convert current video to avi
+			self.ogv_to_avi(video_file)
+
+			# Done! Creating .done file
+			self.create_done(meeting_id)
 		end
 	end
 end
