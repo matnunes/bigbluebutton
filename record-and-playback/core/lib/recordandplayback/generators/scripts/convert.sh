@@ -9,16 +9,19 @@
 # $1 - first parameter must be the DISPLAY_ID, an unique ID that identifies the virtual display
 # $2 - second parameter must be the TIME to be recorded in seconds
 # $3 - third parameter is the WEB_LINK of the video you want to record
+# $4 - fourth parameter is the OUTPUT_PATH of video file
 #
 # For further configuration you can change the 'record.conf' file, sourced in the beggining of this script.
 
 # Configuration file to main recording parameters
-. /var/lib/lxc/bbb/rootfs/home/ubuntu/dev/bigbluebutton/record-and-playback/core/lib/recordandplayback/generators/scripts/convert.conf
+#. /var/lib/lxc/bbb/rootfs/home/ubuntu/dev/bigbluebutton/record-and-playback/core/lib/recordandplayback/generators/scripts/convert.conf
+. ~/dev/bigbluebutton/record-and-playback/core/lib/recordandplayback/generators/scripts/convert.conf
 
 # Input parameters
 DISPLAY_ID=$1
 TIME=$2
 WEB_LINK=$3
+OUTPUT_PATH=$4
 
 # Create new Xvfb display
 Xvfb :$DISPLAY_ID -nocursor -screen 0 $DISPLAY_SETTING &
@@ -37,7 +40,7 @@ DISPLAY=:$DISPLAY_ID xdotool click 1
 MEETING_ID=$(echo $WEB_LINK | cut -d '=' -f2)
 
 # Start recording
-recordmydesktop --display :$DISPLAY_ID --no-cursor --no-sound --width $RECORD_WINDOW_WIDTH --height $RECORD_WINDOW_HEIGHT -x $RECORD_WINDOW_X_OFFSET -y $RECORD_WINDOW_Y_OFFSET &
+recordmydesktop --display :$DISPLAY_ID --no-cursor --no-sound --width $RECORD_WINDOW_WIDTH --height $RECORD_WINDOW_HEIGHT -x $RECORD_WINDOW_X_OFFSET -y $RECORD_WINDOW_Y_OFFSET -o $OUTPUT_PATH &
 RECORD=$!
 
 # Sleep used to keep recording for the defined time
