@@ -14,5 +14,7 @@ record_window_x_offset: 216
 record_window_y_offset: 148
 display_first_id: 97
 display_last_id: 98
-playback_link_prefix: "http://mconf-gravacao.ufrgs.br/playback/presentation/playback.html?meetingId="
+playback_link_prefix: "/playback/presentation/playback.html?meetingId="
 ogg_file_path: "/var/bigbluebutton/published/presentation/"
+lxc_path: "/var/lib/lxc/bbb/rootfs"
+lxc_dev_path: "/var/lib/lxc/bbb/rootfs/home/ubuntu/dev"
