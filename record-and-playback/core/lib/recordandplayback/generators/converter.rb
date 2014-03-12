@@ -156,28 +156,40 @@ module BigBlueButton
 			return display_id
 		end
 
-		# This merges a audio.ogv video with a video.ogg audio file
+		# This merges a audio.ogv video with a video.ogg audio file and stores as ouput_video. File name and extension must
+		# be included in path.
 		#
-		# files_path - path where audio.ogg AND video.ogv are
-		def merge_video_and_audio(files_path)
+		#   input_audio - complete path of audio.ogg
+		#   input_video - complete path of video.ogv
+		#   output_video - complete path of outputted video.ogv
+		def merge_video_and_audio(input_ogg_audio, input_ogv_video, output_ogv_video)
 			BigBlueButton.logger.info("Merging .ogv video to .ogg audio")
-			command = "ffmpeg -i #{files_path}/video.ogv -i #{files_path}/audio.ogg -vcodec copy -acodec copy -acodec copy \
-			#{files_path}/video_and_audio.ogv"
+			command = "ffmpeg -i #{input_ogv_video} -i #{input_ogg_audio} -vcodec copy -acodec copy -acodec copy \
+			#{output_ogv_video}"
+			BigBlueButton.execute(command)
+
+			BigBlueButton.logger.info("Deleting .ogv video without sound")
+			command = "rm #{input_ogv_video}"
 			BigBlueButton.execute(command)
 		end	
 
-		def ogv_to_avi(ogv_file_path)
-			BigBlueButton.logger.info("Converting .ogv to .avi")
-			command = "ffmpeg -i #{ogv_file_path}/video_and_audio.ogv #{ogv_file_path}/video_and_audio.avi"
+		# Convert input .ogv file into output .wmv file. In path, the file name (with extension) must be included.
+		#
+		#   input_ogv - complete path of .ogv file
+		#   output_wmv - complete path where .wmv file must be stored
+		def ogv_to_wmv(input_ogv, output_wmv)
+			BigBlueButton.logger.info("Converting .ogv to .wmv")
+			command = "ffmpeg -i #{input_ogv} #{output_wmv}"
 			BigBlueButton.execute(command)
 
-			command = "rm out.ogv"
+			BigBlueButton.logger.info("Deleting temporary .ogv video file")
+			command = "rm #{input_ogv}"
 			BigBlueButton.execute(command)
 		end
 
 		def create_done(meeting_id)
-			status_path = "#{$bbb_props['recording_dir']}/status/"
-			command = "touch #{status_path}convert/#{meeting_id}.done"
+			status_path = "#{$bbb_props['recording_dir']}/status"
+			command = "touch #{status_path}/converted/#{meeting_id}.done"
 			BigBlueButton.execute(command)
 		end
 
@@ -187,10 +199,11 @@ module BigBlueButton
 		def convert(meeting_id)
 			output_path = "#{$bbb_props['published_dir']}/download/#{meeting_id}"
 			audio_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
-			video_file = "#{output_path}/video.ogv"
+			temp_video_file = "#{output_path}/video_temp.ogv"
+			merged_audio_video = "#{output_path}/video.ogv"
+			final_video_file = "#{output_path}/video.wmv"
+
 			web_link = "#{$bbb_props['playback_host']}#{$props['playback_link_prefix']}#{meeting_id}"
-			
-			# ogg_file = "#{$props['lxc_path']}#{ogg_file}"
 
 			# Getting time in millis from wav file, will be the recording time
 			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
@@ -203,16 +216,16 @@ module BigBlueButton
 			display_id = self.get_display_id
 
 			# Start the recording process
-	#		self.record_by_script(display_id, audio_lenght, web_link, video_file)			
+			self.record_by_script(display_id, audio_lenght, web_link, temp_video_file)			
 
 			# Free used virtual display
 			self.push_free_display(display_id)
 
 			# Append audio to video file
-			self.merge_video_and_audio(output_path)
+			self.merge_video_and_audio(audio_file, temp_video_file, merged_audio_video)
 
 			# Convert current video to avi
-			self.ogv_to_avi(video_file)
+			self.ogv_to_wmv(merged_audio_video, final_video_file)
 
 			# Done! Creating .done file
 			self.create_done(meeting_id)
