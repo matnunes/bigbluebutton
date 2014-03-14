@@ -28,8 +28,12 @@ Xvfb :$DISPLAY_ID -nocursor -screen 0 $DISPLAY_SETTING &
 DISPLAY=$!
 
 # Open firefox on new display
-firefox --display :$DISPLAY_ID -p $DISPLAY_ID -width $FIREFOX_WIDTH -height $FIREFOX_HEIGHT -new-window $WEB_LINK &
+firefox -safe-mode --display :$DISPLAY_ID -p $DISPLAY_ID -width $FIREFOX_WIDTH -height $FIREFOX_HEIGHT -new-window $WEB_LINK &
 FIREFOX=$!
+
+# Press enter to skip safemode
+sleep $SAFEMODE_WAIT
+DISPLAY=:$DISPLAY_ID xdotool key Return
 
 # Move mouse to start playing the video
 sleep $FIREFOX_LOAD_WAIT
