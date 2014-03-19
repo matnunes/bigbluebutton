@@ -44,7 +44,7 @@ DISPLAY=:$DISPLAY_ID xdotool click 1
 MEETING_ID=$(echo $WEB_LINK | cut -d '=' -f2)
 
 # Start recording
-recordmydesktop --display :$DISPLAY_ID --no-cursor --no-sound --width $RECORD_WINDOW_WIDTH --height $RECORD_WINDOW_HEIGHT -x $RECORD_WINDOW_X_OFFSET -y $RECORD_WINDOW_Y_OFFSET -o $OUTPUT_PATH &
+recordmydesktop --full-shots --display :$DISPLAY_ID --no-cursor --no-sound --width $RECORD_WINDOW_WIDTH --height $RECORD_WINDOW_HEIGHT -x $RECORD_WINDOW_X_OFFSET -y $RECORD_WINDOW_Y_OFFSET -o $OUTPUT_PATH &
 RECORD=$!
 
 # Sleep used to keep recording for the defined time
