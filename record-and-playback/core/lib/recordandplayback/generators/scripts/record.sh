@@ -15,7 +15,7 @@
 
 # Configuration file to main recording parameters
 #. /var/lib/lxc/bbb/rootfs/home/ubuntu/dev/bigbluebutton/record-and-playback/core/lib/recordandplayback/generators/scripts/convert.conf
-. ~/dev/bigbluebutton/record-and-playback/core/lib/recordandplayback/generators/scripts/convert.conf
+. ~/dev/bigbluebutton/record-and-playback/core/lib/recordandplayback/generators/scripts/record.conf
 
 # Input parameters
 DISPLAY_ID=$1

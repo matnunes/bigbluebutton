@@ -10,12 +10,12 @@ require 'thread'
 module BigBlueButton
 
 	# All necessary bash commands to output a video
-	class VideoConverter
+	class VideoRecorder
 
 		include Singleton
 
 		# Load yaml file with recording properties
-		$props = YAML::load(File.open('converter.yml'))
+		$props = YAML::load(File.open('recorder.yml'))
 		$bbb_props = YAML::load(File.open('../../../scripts/bigbluebutton.yml'))
 
 		def initialize
@@ -103,14 +103,15 @@ module BigBlueButton
 			BigBlueButton.execute(command)
 		end
 
-		# This is the easiest way to record a video as .ogv. This function just calls a shell script
+		# This is the easiest way to record a video as .ogv. This function just calls a shell script that must be stored as
+		# ./scripts/record.sh
 		#
 		#   display_id - unique id of virtual display to be used
 		#   seconds - seconds of video to be recorded
 		#   web_link - link of video to be recorded
 		#   output_path - path to where the video file must be outputed
 		def record_by_script(display_id, seconds, web_link, output_path)
-			command = "./scripts/convert.sh #{display_id} #{seconds} #{web_link} #{output_path}"
+			command = "./scripts/record.sh #{display_id} #{seconds} #{web_link} #{output_path}"
 			BigBlueButton.logger.info("Task: Recording on display #{display_id} during #{seconds} seconds")
 			BigBlueButton.execute(command)
 		end
@@ -184,9 +185,12 @@ module BigBlueButton
 
 			BigBlueButton.logger.info("Deleting temporary .ogv video file")
 			command = "rm #{input_ogv}"
-			BigBlueButton.execute(command)
+			#BigBlueButton.execute(command)
 		end
 
+		# Create .done status file of meeting_id after convertion
+		#
+		#   meeting_id - id of meeting
 		def create_done(meeting_id)
 			status_path = "#{$bbb_props['recording_dir']}/status"
 			command = "touch #{status_path}/converted/#{meeting_id}.done"
@@ -196,7 +200,7 @@ module BigBlueButton
 		# This converts a playback meeting and outputs a out.avi file at bigbluebutton/published/download/#{meeting_id}
 		#
 		#   meeting_id - meeting id of video to be converted
-		def convert(meeting_id)
+		def record(meeting_id)
 			output_path = "#{$bbb_props['published_dir']}/download/#{meeting_id}"
 			audio_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
 			temp_video_file = "#{output_path}/video_temp.ogv"
@@ -207,6 +211,8 @@ module BigBlueButton
 
 			# Getting time in millis from wav file, will be the recording time
 			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
+
+			#audio_lenght = 3
 
 			BigBlueButton.logger.info("Creating #{output_path}")
 			command = "mkdir #{output_path}"
