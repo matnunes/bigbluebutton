@@ -197,11 +197,11 @@ module BigBlueButton
 			BigBlueButton.execute(command)
 		end
 
-		# This converts a playback meeting and outputs a out.avi file at bigbluebutton/published/download/#{meeting_id}
+		# This converts a playback meeting and outputs a out.avi file at bigbluebutton/published/#{meeting_id}
 		#
 		#   meeting_id - meeting id of video to be converted
 		def record(meeting_id)
-			output_path = "#{$bbb_props['published_dir']}/download/#{meeting_id}"
+			output_path = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}"
 			audio_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
 			temp_video_file = "#{output_path}/video_temp.ogv"
 			merged_audio_video = "#{output_path}/video.ogv"
