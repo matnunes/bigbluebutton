@@ -1,28 +1,27 @@
-path = File.expand_path(File.join(File.dirname(__FILE__), '../generators'))
-$LOAD_PATH << path
-
 #require 'background_process'
-require 'audio'
 require 'yaml'
 require 'thread'
 
+require '../../core/lib/recordandplayback'
 
 module BigBlueButton
 
 	# All necessary bash commands to output a video
 	class VideoRecorder
 
-		include Singleton
+#		include Singleton
 
 		# Load yaml file with recording properties
-		$props = YAML::load(File.open('recorder.yml'))
-		$bbb_props = YAML::load(File.open('../../../scripts/bigbluebutton.yml'))
+		$props = YAML::load(File.open('../../core/scripts/presentation_video.yml'))
+		$bbb_props = YAML::load(File.open('../../core/scripts/bigbluebutton.yml'))
 
 		def initialize
 			@virtual_displays = [*$props['display_first_id']..$props['display_last_id']]
 			@display_mutex = Mutex.new
 		end
 
+		attr_accessor :target_dir
+=begin
 		# Xvfb PID
 		attr_accessor :xvfb
 
@@ -102,6 +101,7 @@ module BigBlueButton
 			BigBlueButton.logger.info("Task: Killing recording processes at display #{display_id}")
 			BigBlueButton.execute(command)
 		end
+=end
 
 		# This is the easiest way to record a video as .ogv. This function just calls a shell script that must be stored as
 		# ./scripts/record.sh
@@ -111,7 +111,7 @@ module BigBlueButton
 		#   web_link - link of video to be recorded
 		#   output_path - path to where the video file must be outputed
 		def record_by_script(display_id, seconds, web_link, output_path)
-			command = "./scripts/record.sh #{display_id} #{seconds} #{web_link} #{output_path}"
+			command = "/usr/local/bigbluebutton/core/scripts/process/record.sh #{display_id} #{seconds} #{web_link} #{output_path}"
 			BigBlueButton.logger.info("Task: Recording on display #{display_id} during #{seconds} seconds")
 			BigBlueButton.execute(command)
 		end
@@ -157,84 +157,39 @@ module BigBlueButton
 			return display_id
 		end
 
-		# This merges a audio.ogv video with a video.ogg audio file and stores as ouput_video. File name and extension must
-		# be included in path.
-		#
-		#   input_audio - complete path of audio.ogg
-		#   input_video - complete path of video.ogv
-		#   output_video - complete path of outputted video.ogv
-		def merge_video_and_audio(input_ogg_audio, input_ogv_video, output_ogv_video)
-			BigBlueButton.logger.info("Merging .ogv video to .ogg audio")
-			command = "ffmpeg -i #{input_ogv_video} -i #{input_ogg_audio} -vcodec copy -acodec copy -acodec copy \
-			#{output_ogv_video}"
-			BigBlueButton.execute(command)
-
-			BigBlueButton.logger.info("Deleting .ogv video without sound")
-			command = "rm #{input_ogv_video}"
-			BigBlueButton.execute(command)
-		end	
-
-		# Convert input .ogv file into output .wmv file. In path, the file name (with extension) must be included.
-		#
-		#   input_ogv - complete path of .ogv file
-		#   output_wmv - complete path where .wmv file must be stored
-		def ogv_to_wmv(input_ogv, output_wmv)
-			BigBlueButton.logger.info("Converting .ogv to .wmv")
-			command = "ffmpeg -i #{input_ogv} #{output_wmv}"
-			BigBlueButton.execute(command)
-
-			BigBlueButton.logger.info("Deleting temporary .ogv video file")
-			command = "rm #{input_ogv}"
-			#BigBlueButton.execute(command)
-		end
-
-		# Create .done status file of meeting_id after convertion
-		#
-		#   meeting_id - id of meeting
-		def create_done(meeting_id)
-			status_path = "#{$bbb_props['recording_dir']}/status"
-			command = "touch #{status_path}/converted/#{meeting_id}.done"
-			BigBlueButton.execute(command)
-		end
-
 		# This converts a playback meeting and outputs a out.avi file at bigbluebutton/published/#{meeting_id}
 		#
 		#   meeting_id - meeting id of video to be converted
 		def record(meeting_id)
-			output_path = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}"
 			audio_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
-			temp_video_file = "#{output_path}/video_temp.ogv"
-			merged_audio_video = "#{output_path}/video.ogv"
-			final_video_file = "#{output_path}/video.wmv"
 
-			web_link = "#{$bbb_props['playback_host']}#{$props['playback_link_prefix']}#{meeting_id}"
+			web_link = "http://#{$bbb_props['playback_host']}/#{$props['playback_link_prefix']}?meetingId=#{meeting_id}"
 
 			# Getting time in millis from wav file, will be the recording time
 			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
 
-			#audio_lenght = 3
-
-			BigBlueButton.logger.info("Creating #{output_path}")
-			command = "mkdir #{output_path}"
-			#BigBlueButton.execute(command)
-
 			# Get a free display
 			display_id = self.get_display_id
 
+			recorded_screen_raw_file = "#{target_dir}/recorded_screen_raw.ogv"
 			# Start the recording process
-			self.record_by_script(display_id, audio_lenght, web_link, temp_video_file)			
+			self.record_by_script(display_id, audio_lenght, web_link, recorded_screen_raw_file)
 
 			# Free used virtual display
 			self.push_free_display(display_id)
 
-			# Append audio to video file
-			self.merge_video_and_audio(audio_file, temp_video_file, merged_audio_video)
+			format = {
+				:extension => 'webm',
+				:parameters => [
+					[ '-c:v', 'libvpx', '-crf', '34', '-b:v', '60M',
+					'-threads', '2', '-deadline', 'good', '-cpu-used', '3',
+					'-c:a', 'libvorbis', '-b:a', '32K',
+					'-f', 'webm' ]
+				]
+			}
 
-			# Convert current video to avi
-			self.ogv_to_wmv(merged_audio_video, final_video_file)
-
-			# Done! Creating .done file
-			self.create_done(meeting_id)
+			final_video_file = "#{target_dir}/meeting"
+			BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, final_video_file, 0)
 		end
 	end
 end

@@ -14,8 +14,7 @@
 # For further configuration you can change the 'record.conf' file, sourced in the beggining of this script.
 
 # Configuration file to main recording parameters
-#. /var/lib/lxc/bbb/rootfs/home/ubuntu/dev/bigbluebutton/record-and-playback/core/lib/recordandplayback/generators/scripts/convert.conf
-. ~/dev/bigbluebutton/record-and-playback/core/lib/recordandplayback/generators/scripts/record.conf
+. /usr/local/bigbluebutton/core/scripts/process/record.conf
 
 # Input parameters
 DISPLAY_ID=$1
@@ -28,7 +27,7 @@ Xvfb :$DISPLAY_ID -nocursor -screen 0 $DISPLAY_SETTING &
 DISPLAY=$!
 
 # Open firefox on new display
-firefox -safe-mode --display :$DISPLAY_ID -p $DISPLAY_ID -width $FIREFOX_WIDTH -height $FIREFOX_HEIGHT -new-window $WEB_LINK &
+firefox -profile /tmp/presentation_video-firefox-profile/ -safe-mode --display :$DISPLAY_ID -p $DISPLAY_ID -width $FIREFOX_WIDTH -height $FIREFOX_HEIGHT -new-window $WEB_LINK &
 FIREFOX=$!
 
 # Press enter to skip safemode
