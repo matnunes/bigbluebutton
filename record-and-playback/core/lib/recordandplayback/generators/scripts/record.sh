@@ -35,13 +35,14 @@ FIREFOX=$!
 sleep $SAFEMODE_WAIT
 DISPLAY=:$DISPLAY_ID xdotool key Return
 
-# Move mouse to start playing the video
-sleep $FIREFOX_LOAD_WAIT
-DISPLAY=:$DISPLAY_ID xdotool mousemove $PLAY_BUTTON_X_POSITION $PLAY_BUTTON_Y_POSITION
-DISPLAY=:$DISPLAY_ID xdotool click 1
-
 #Get meeting id from web link
 MEETING_ID=$(echo $WEB_LINK | cut -d '=' -f2)
+
+# Move mouse to start playing the video
+sleep $FIREFOX_LOAD_WAIT
+
+DISPLAY=:$DISPLAY_ID xdotool mousemove $PLAY_BUTTON_X_POSITION $PLAY_BUTTON_Y_POSITION
+DISPLAY=:$DISPLAY_ID xdotool click 1
 
 # Start recording
 recordmydesktop --full-shots --display :$DISPLAY_ID --no-cursor --no-sound --width $RECORD_WINDOW_WIDTH --height $RECORD_WINDOW_HEIGHT -x $RECORD_WINDOW_X_OFFSET -y $RECORD_WINDOW_Y_OFFSET -o $OUTPUT_PATH &
