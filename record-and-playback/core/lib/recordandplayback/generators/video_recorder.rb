@@ -117,9 +117,10 @@ module BigBlueButton
 		end
 
 		# SYNCHRONIZED: This pops a display id from display id list.
-		def pop_free_display
+		def pop_free_display		
 			@display_mutex.synchronize do
 				display_id = @virtual_displays.pop
+				BigBlueButton.logger.info("Got display ID: #{display_id}.")
 				return display_id
 			end
 		end
@@ -128,6 +129,7 @@ module BigBlueButton
 		#
 		#   display_id - id of used display
 		def push_free_display(display_id)
+			BigBlueButton.logger.info("Pushing used display ID #{display_id} back to display pool.")
 			@display_mutex.synchronize do
 				@virtual_displays.push(display_id)
 			end
@@ -139,17 +141,18 @@ module BigBlueButton
 		# @Return
 		#   display_id - ID of virtual display
 		def get_display_id
+			BigBlueButton.logger.info("Trying to get free display ID from display pool.")
 			display_id = self.pop_free_display
 			sleep_count = 0
 
 			while display_id == nil
-				puts "Waiting for free display #{sleep_count}"
+				BigBlueButton.logger.info("Waiting for free display ID.")
 				sleep(2)
 				sleep_count += 1
 				display_id = self.pop_free_display
 
 				if sleep_count >= 5
-					puts "No virtual displays available, try again later!"
+					BigBlueButton.logger.info("No free display after 5 tries. Returning nil.")
 					return nil
 				end
 			end
@@ -161,6 +164,8 @@ module BigBlueButton
 		#
 		#   meeting_id - meeting id of video to be converted
 		def record(meeting_id)
+			BigBlueButton.logger.info("Preparing to record meeting #{meeting_id}.")
+
 			audio_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
 
 			web_link = "http://#{$bbb_props['playback_host']}/#{$props['playback_link_prefix']}?meetingId=#{meeting_id}"
