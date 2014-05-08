@@ -1,4 +1,4 @@
-#require 'background_process'
+require 'background_process' #https://github.com/timcharper/background_process https://rubygems.org/gems/background_process
 require 'yaml'
 require 'thread'
 
@@ -21,7 +21,7 @@ module BigBlueButton
 		end
 
 		attr_accessor :target_dir
-=begin
+
 		# Xvfb PID
 		attr_accessor :xvfb
 
@@ -30,14 +30,16 @@ module BigBlueButton
 		#   display_id - unique ID of virtual display
 		def create_virtual_display(display_id)
 			command = "Xvfb :#{display_id} -nocursor -screen 0 #{$props['display_setting']}"
-			puts "Xvfb command : #{command}"
-			BigBlueButton.logger.info("Task: Starting Xvfb virtual display with ID #{display_id}")
-			#self.xvfb = BackgroundProcess.run(command)
 
-			BigBlueButton.execute(command)
+			BigBlueButton.logger.info("Task: Starting Xvfb virtual display with ID #{display_id}.")
+			BigBlueButton.logger.info("Executing: #{command}")
+			
+			self.xvfb = BackgroundProcess.run(command)
 
 			# Wait a while until the virtual display is ready
 			command = "sleep #{$props['xvfb_wait']}"
+
+			BigBlueButton.execute(command)
 		end
 
 		# Firefox PID
@@ -48,14 +50,21 @@ module BigBlueButton
 		#   display_id - unique ID of virtual display
 		#   video_link - link of video to be recorded
 		def fire_firefox(display_id, video_link)
-			main_props = "--display #{display_id} -p #{display_id} -new-window #{video_link}"
-			size_props = "-width #{$props['firefox_width']} -height #{$props['display_height']}"
-			command = "firefox #{main_props} #{size_props} &"
+			#main_props = "--display #{display_id} -p #{display_id} -new-window #{video_link}"
+			main_props = "-safe-mode --display :#{display_id} -new-window #{video_link}"
+			size_props = "-width #{$props['firefox_width']} -height #{$props['firefox_height']}"
+			command = "firefox #{size_props} #{main_props}"
 
 			BigBlueButton.logger.info("Task: Starting firefox in display ID #{display_id}")
+			BigBlueButton.logger.info("Executing: #{command}")
+			
 			self.firefox = BackgroundProcess.run(command)
 
-			puts "Firefox running? #{self.firefox.running?}"
+			command = "sleep #{$props['firefox_safemode_wait']}"
+			BigBlueButton.execute(command)
+
+			command = "DISPLAY=:#{display_id} xdotool key Return"
+			#BigBlueButton.execute(command)
 		end
 
 		# RecordMyDesktop PID
@@ -65,43 +74,57 @@ module BigBlueButton
 		#
 		#   display_id - unique ID of virtual display
 		#   millis - time to record movie in millis
-		def record_video(display_id, millis)
-			# Blocking is better to ensure we will wait until the video starts being recorded
-			command = "DISPLAY=:#{display_id} xdotool mousemove #{$props['play_button_x_position']}
-			#{$props['play_button_y_position']} & xdotool click 1"
-			BigBlueButton.logger.info("Task: Playing video in display ID #{display_id} by clicking on play button")
-			BackgroundProcess.run(command)
-
-			main_props = "--display :#{display_id} --no-cursor --no-sound"
+		def record_video(display_id, seconds, output_path)
+			BigBlueButton.logger.info("Xvfb running? #{self.xvfb.running?}")
+			# Set variables at first to do not lose time between starting and recording video
+			main_props = "--display :#{display_id} --no-cursor --no-sound -o #{output_path}"
 			size_props = "--width #{$props['record_window_width']} --height #{$props['record_window_height']}"
 			offset_props = "-x #{$props['record_window_x_offset']} -y #{$props['record_window_y_offset']}"
 
-			command = "recordmydesktop #{main_props} #{size_props} #{offset_props}"
-			BigBlueButton.logger.info("Task: Recording video in display ID #{display_id} with #{millis}ms of duration")
-			self.rmd = BackgroundProcess.run(command)
+			rmd_command = "recordmydesktop #{main_props} #{size_props} #{offset_props}"
+
+			# Blocking is better to ensure we will wait until the video starts being recorded
+			command = "DISPLAY=:#{display_id} xdotool mousemove #{$props['play_button_x_position']} #{$props['play_button_y_position']} & xdotool click 1"
+			BigBlueButton.logger.info("Task: Playing video in display ID #{display_id} by clicking on play button")
+			#mouse_move = BackgroundProcess.run(command)
+			#BigBlueButton.execute(command)
+
+			#BigBlueButton.logger.info("Task: Waiting click")
+			#mouse_move.wait
+			#BigBlueButton.logger.info("Task: Clicked")
+
+			BigBlueButton.logger.info("Task: Recording video in display ID #{display_id} with #{seconds}s of duration")
+			BigBlueButton.logger.info("Executing: #{rmd_command}")
+			self.rmd = BackgroundProcess.run(rmd_command)
 
 			# Transform milliseconds in seconds
-			seconds = millis / 1000;
+			#seconds = millis / 1000;
 
-			command = "sleep #{seconds}"
 			BigBlueButton.logger.info("Task: Waiting #{seconds} seconds until the end of the recording")
+			command = "sleep #{seconds}"	
 			BigBlueButton.execute(command)
-
-			puts "RMD pid: #{self.rmd.pid}"
-			self.rmd.kill("TERM")
+			
 			BigBlueButton.logger.info("Task: Recording process terminated. Flushing data to disk.")
+			self.rmd.kill("TERM")
 			self.rmd.wait
 
 			BigBlueButton.logger.info("Task: Data flushed!")
 		end
 
 		# Kills all used processes
-		def kill_processes
-			command = "kill -s 15 @firefox_pid @rmd_pid @xvfb_pid"
-			BigBlueButton.logger.info("Task: Killing recording processes at display #{display_id}")
-			BigBlueButton.execute(command)
+		def end_processes
+
+			BigBlueButton.logger.info("Task: Stopping firefox")
+			self.firefox.kill("TERM")
+
+			BigBlueButton.logger.info("Task: Stopping Xvfb")
+			self.xvfb.kill("TERM")
+
+			#command = "kill -s 15 @firefox_pid @rmd_pid @xvfb_pid"
+			#BigBlueButton.logger.info("Task: Killing recording processes at display #{display_id}")
+			#BigBlueButton.execute(command)
 		end
-=end
+
 
 		# This is the easiest way to record a video as .ogv. This function just calls a shell script that must be stored as
 		# ./scripts/record.sh
@@ -140,7 +163,7 @@ module BigBlueButton
 		#
 		# @Return
 		#   display_id - ID of virtual display
-		def get_display_id
+		def get_free_display
 			BigBlueButton.logger.info("Trying to get free display ID from display pool.")
 			display_id = self.pop_free_display
 			sleep_count = 0
@@ -173,12 +196,24 @@ module BigBlueButton
 			# Getting time in millis from wav file, will be the recording time
 			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
 
-			# Get a free display
-			display_id = self.get_display_id
+			display_id = self.get_free_display
 
 			recorded_screen_raw_file = "#{target_dir}/recorded_screen_raw.ogv"
+			
+			BigBlueButton.logger.info("CREATE VIRTUAL DISPLAY")
+			self.create_virtual_display(display_id)
+
+			BigBlueButton.logger.info("CREATE FIREFOX")
+			self.fire_firefox(display_id, web_link)
+
+			BigBlueButton.logger.info("CREATE RECORDING")
+			self.record_video(display_id, audio_lenght, recorded_screen_raw_file)
+
+			BigBlueButton.logger.info("KILLING REMAINING PROCESSES")
+			self.end_processes
+
 			# Start the recording process
-			self.record_by_script(display_id, audio_lenght, web_link, recorded_screen_raw_file)
+			#self.record_by_script(display_id, audio_lenght, web_link, recorded_screen_raw_file)
 
 			# Free used virtual display
 			self.push_free_display(display_id)
@@ -198,3 +233,5 @@ module BigBlueButton
 		end
 	end
 end
+
+
