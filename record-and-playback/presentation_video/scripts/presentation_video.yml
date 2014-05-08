@@ -12,13 +12,14 @@ presentation_unpublished_dir: /var/bigbluebutton/unpublished/presentation
 display_setting: 1400x768x24
 firefox_width: 1400
 firefox_height: 768
-xvfb_wait: 5
+firefox_safemode_wait: 5
+xvfb_wait: 10
 play_button_x_position: 196
 play_button_y_position: 720
 record_window_width: 1184
 record_window_height: 560
 record_window_x_offset: 216
 record_window_y_offset: 148
-display_first_id: 97
-display_last_id: 98
+display_first_id: 95
+display_last_id: 96
 playback_link_prefix: "playback/presentation/playback.html"
