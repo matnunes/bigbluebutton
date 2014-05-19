@@ -63,8 +63,11 @@ module BigBlueButton
 			command = "sleep #{$props['firefox_safemode_wait']}"
 			BigBlueButton.execute(command)
 
-			command = "DISPLAY=:#{display_id} xdotool key Return"
-			#BigBlueButton.execute(command)
+			command = "DISPLAY=:#{display_id} xdotool key Return"			
+			BigBlueButton.logger.info("Executing: #{command}")
+			BigBlueButton.execute(command)
+			#enter = BackgroundProcess.run("DISPLAY=:#{display_id} xdotool key Return")
+			#enter.wait
 		end
 
 		# RecordMyDesktop PID
@@ -75,7 +78,6 @@ module BigBlueButton
 		#   display_id - unique ID of virtual display
 		#   millis - time to record movie in millis
 		def record_video(display_id, seconds, output_path)
-			BigBlueButton.logger.info("Xvfb running? #{self.xvfb.running?}")
 			# Set variables at first to do not lose time between starting and recording video
 			main_props = "--display :#{display_id} --no-cursor --no-sound -o #{output_path}"
 			size_props = "--width #{$props['record_window_width']} --height #{$props['record_window_height']}"
@@ -86,27 +88,35 @@ module BigBlueButton
 			# Blocking is better to ensure we will wait until the video starts being recorded
 			command = "DISPLAY=:#{display_id} xdotool mousemove #{$props['play_button_x_position']} #{$props['play_button_y_position']} & xdotool click 1"
 			BigBlueButton.logger.info("Task: Playing video in display ID #{display_id} by clicking on play button")
-			#mouse_move = BackgroundProcess.run(command)
-			#BigBlueButton.execute(command)
+			BigBlueButton.execute(command)
 
-			#BigBlueButton.logger.info("Task: Waiting click")
-			#mouse_move.wait
-			#BigBlueButton.logger.info("Task: Clicked")
+			BigBlueButton.logger.debug("Task: Video started")
 
 			BigBlueButton.logger.info("Task: Recording video in display ID #{display_id} with #{seconds}s of duration")
 			BigBlueButton.logger.info("Executing: #{rmd_command}")
 			self.rmd = BackgroundProcess.run(rmd_command)
-
-			# Transform milliseconds in seconds
-			#seconds = millis / 1000;
 
 			BigBlueButton.logger.info("Task: Waiting #{seconds} seconds until the end of the recording")
 			command = "sleep #{seconds}"	
 			BigBlueButton.execute(command)
 			
 			BigBlueButton.logger.info("Task: Recording process terminated. Flushing data to disk.")
+			
+			BigBlueButton.logger.debug("Killing RecordMyDesktop. Running: #{self.rmd.running?}")			
+			
+			#rmd_pid = "#{self.rmd.wait}"
+			#rmd_pid = rmd_pid.split[1]
+
+			BigBlueButton.logger.debug("PID: #{self.rmd.pid}")
+
 			self.rmd.kill("TERM")
+			#BigBlueButton.execute("kill -s 15 #{self.rmd.pid}")
+			#BigBlueButton.execute("wait #{self.rmd.pid}")
+			BigBlueButton.logger.debug("Waiting RecordMyDesktop to flush data to disk. Running: #{self.rmd.running?}")
 			self.rmd.wait
+
+			BigBlueButton.logger.debug("Waiting RecordMyDesktop to flush data to disk via BBB. Running: #{self.rmd.running?}")
+			#BigBlueButton.execute("sleep 43")
 
 			BigBlueButton.logger.info("Task: Data flushed!")
 		end
@@ -117,8 +127,12 @@ module BigBlueButton
 			BigBlueButton.logger.info("Task: Stopping firefox")
 			self.firefox.kill("TERM")
 
+			self.firefox.wait
+
 			BigBlueButton.logger.info("Task: Stopping Xvfb")
 			self.xvfb.kill("TERM")
+
+			self.xvfb.wait
 
 			#command = "kill -s 15 @firefox_pid @rmd_pid @xvfb_pid"
 			#BigBlueButton.logger.info("Task: Killing recording processes at display #{display_id}")
@@ -200,18 +214,19 @@ module BigBlueButton
 
 			recorded_screen_raw_file = "#{target_dir}/recorded_screen_raw.ogv"
 			
-			BigBlueButton.logger.info("CREATE VIRTUAL DISPLAY")
+			BigBlueButton.logger.debug("CREATE VIRTUAL DISPLAY")
 			self.create_virtual_display(display_id)
 
-			BigBlueButton.logger.info("CREATE FIREFOX")
+			BigBlueButton.logger.debug("CREATE FIREFOX")
 			self.fire_firefox(display_id, web_link)
 
-			BigBlueButton.logger.info("CREATE RECORDING")
+			BigBlueButton.logger.debug("CREATE RECORDING")
 			self.record_video(display_id, audio_lenght, recorded_screen_raw_file)
 
-			BigBlueButton.logger.info("KILLING REMAINING PROCESSES")
+			BigBlueButton.logger.debug("KILLING REMAINING PROCESSES")
 			self.end_processes
 
+			BigBlueButton.logger.debug("RECORD BY SCRIPT TO TEST DISPLAY VARIABLES")
 			# Start the recording process
 			#self.record_by_script(display_id, audio_lenght, web_link, recorded_screen_raw_file)
 
