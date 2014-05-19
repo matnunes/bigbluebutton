@@ -2,6 +2,7 @@ In order to make this branch work properly, you must create the following folder
 /var/bigbluebutton/recording/publish/presentation_video
 /var/bigbluebutton/published/presentation_video
 
+http://rubygems.org/gems/background_process
 You need also to install the background_process ruby gem:
 https://github.com/timcharper/background_process
 
