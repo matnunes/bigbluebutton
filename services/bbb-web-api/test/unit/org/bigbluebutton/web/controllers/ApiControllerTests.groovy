@@ -21,7 +21,7 @@ class ApiControllerTests {//extends ControllerUnitTestCase {
 	final String TEST_VOICE_BRIDGE = "9999"
 	final String TEST_CONF_MOCK = "conference-mock-default"
 	final String DEF_LOGOUT_URL = ""
-	final String DEF_SERVER_URL = "http://192.168.0.166"
+	final String DEF_SERVER_URL = "http://10.0.3.34"
 	final int DEF_NUM_FOR_VOICE = 5;
 	final String DEF_CLIENT_URL = "http://localhost/client/BigBlueButton.html"
 	final int DEF_MEETING_DURATION = 210;

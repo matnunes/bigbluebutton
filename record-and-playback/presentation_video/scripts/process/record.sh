@@ -1,9 +1,7 @@
 # @author Felipe Mathias Schmidt, PRAV - MConf (UFRGS)
 #
-# This script creates a virtual display, fires an instance of firefox inside it with a video link. Firefox version used
-# is 27.0; the web-browser must be previously configurated, creating as much profiles as desired to your recording pool
-# (number of simultaneous recording). Profile names must be the same as the virtual display ID (e.g: 99).
-# By the end of this process, all used programs are closed/terminated.
+# This script creates a virtual display, fires an instance of firefox inside it with a given video link. Firefox version
+# used is 27.0.
 #
 # Parameters
 # $1 - first parameter must be the DISPLAY_ID, an unique ID that identifies the virtual display
@@ -24,11 +22,17 @@ OUTPUT_PATH=$4
 
 # Create new Xvfb display
 Xvfb :$DISPLAY_ID -nocursor -screen 0 $DISPLAY_SETTING &
-DISPLAY=$!
+XVFB=$!
 
-# Open firefox on new display
-firefox -profile /tmp/presentation_video-firefox-profile/ -safe-mode --display :$DISPLAY_ID -p $DISPLAY_ID -width $FIREFOX_WIDTH -height $FIREFOX_HEIGHT -new-window $WEB_LINK &
+# Open firefox on new display -p $DISPLAY_ID 
+firefox -profile /tmp/presentation_video-firefox-profile/ -safe-mode --display :$DISPLAY_ID -width $FIREFOX_WIDTH -height $FIREFOX_HEIGHT -new-window $WEB_LINK &
 FIREFOX=$!
+
+# Xvfb :96 -screen 0 1400x768x24 &
+# firefox -profile /tmp/presentation_video-firefox-profile/ -p 96 -safe-mode --display :96 -new-window www.terra.com.br &
+# firefox -p 96 -safe-mode --display :96 -new-window www.terra.com.br &
+# recordmydesktop --display :96 --no-sound
+# DISPLAY=:96 xdotool key Return
 
 # Press enter to skip safemode
 sleep $SAFEMODE_WAIT
@@ -47,6 +51,8 @@ DISPLAY=:$DISPLAY_ID xdotool click 1
 recordmydesktop --full-shots --display :$DISPLAY_ID --no-cursor --no-sound --width $RECORD_WINDOW_WIDTH --height $RECORD_WINDOW_HEIGHT -x $RECORD_WINDOW_X_OFFSET -y $RECORD_WINDOW_Y_OFFSET -o $OUTPUT_PATH &
 RECORD=$!
 
+DISPLAY=:$DISPLAY_ID xdotool key Return
+
 # Sleep used to keep recording for the defined time
 sleep $TIME
 
@@ -58,7 +64,7 @@ kill -s 15 $FIREFOX
 # Waiting to store the recorded video
 wait $RECORD
 
-kill -s 15 $DISPLAY
+kill -s 15 $XVFB
 
 echo "Recording at display $DISPLAY_ID during $TIME seconds terminated."
 

@@ -38,7 +38,6 @@ module BigBlueButton
 
 			# Wait a while until the virtual display is ready
 			command = "sleep #{$props['xvfb_wait']}"
-
 			BigBlueButton.execute(command)
 		end
 
@@ -53,7 +52,7 @@ module BigBlueButton
 			#main_props = "--display #{display_id} -p #{display_id} -new-window #{video_link}"
 			main_props = "-safe-mode --display :#{display_id} -new-window #{video_link}"
 			size_props = "-width #{$props['firefox_width']} -height #{$props['firefox_height']}"
-			command = "firefox #{size_props} #{main_props}"
+			command = "HOME=/tmp/tomcat-profile/ firefox #{size_props} #{main_props}"
 
 			BigBlueButton.logger.info("Task: Starting firefox in display ID #{display_id}")
 			BigBlueButton.logger.info("Executing: #{command}")
@@ -63,11 +62,8 @@ module BigBlueButton
 			command = "sleep #{$props['firefox_safemode_wait']}"
 			BigBlueButton.execute(command)
 
-			command = "DISPLAY=:#{display_id} xdotool key Return"			
-			BigBlueButton.logger.info("Executing: #{command}")
+			command = "DISPLAY=:#{display_id} xdotool key Return"
 			BigBlueButton.execute(command)
-			#enter = BackgroundProcess.run("DISPLAY=:#{display_id} xdotool key Return")
-			#enter.wait
 		end
 
 		# RecordMyDesktop PID
@@ -101,22 +97,12 @@ module BigBlueButton
 			BigBlueButton.execute(command)
 			
 			BigBlueButton.logger.info("Task: Recording process terminated. Flushing data to disk.")
-			
-			BigBlueButton.logger.debug("Killing RecordMyDesktop. Running: #{self.rmd.running?}")			
-			
-			#rmd_pid = "#{self.rmd.wait}"
-			#rmd_pid = rmd_pid.split[1]
 
-			BigBlueButton.logger.debug("PID: #{self.rmd.pid}")
-
-			self.rmd.kill("TERM")
-			#BigBlueButton.execute("kill -s 15 #{self.rmd.pid}")
-			#BigBlueButton.execute("wait #{self.rmd.pid}")
+			self.rmd.kill("TERM")			
 			BigBlueButton.logger.debug("Waiting RecordMyDesktop to flush data to disk. Running: #{self.rmd.running?}")
 			self.rmd.wait
 
 			BigBlueButton.logger.debug("Waiting RecordMyDesktop to flush data to disk via BBB. Running: #{self.rmd.running?}")
-			#BigBlueButton.execute("sleep 43")
 
 			BigBlueButton.logger.info("Task: Data flushed!")
 		end
