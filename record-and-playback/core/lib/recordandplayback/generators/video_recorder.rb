@@ -49,21 +49,34 @@ module BigBlueButton
 		#   display_id - unique ID of virtual display
 		#   video_link - link of video to be recorded
 		def fire_firefox(display_id, video_link)
+			command = "rm -rf #{$props['firefox_home']} && mkdir -p #{$props['firefox_profile']}"
+			BigBlueButton.logger.info("Task: Refreshing firefox home and profile folders")
+			BigBlueButton.execute(command)
+
 			#main_props = "--display #{display_id} -p #{display_id} -new-window #{video_link}"
-			main_props = "-safe-mode --display :#{display_id} -new-window #{video_link}"
+			main_props = "-profile #{$props['firefox_profile']} -safe-mode --display :#{display_id} -new-window #{video_link}"
 			size_props = "-width #{$props['firefox_width']} -height #{$props['firefox_height']}"
-			command = "HOME=/tmp/tomcat-profile/ firefox #{size_props} #{main_props}"
+			command = "HOME=#{$props['firefox_home']} firefox #{size_props} #{main_props}"
 
 			BigBlueButton.logger.info("Task: Starting firefox in display ID #{display_id}")
 			BigBlueButton.logger.info("Executing: #{command}")
 			
 			self.firefox = BackgroundProcess.run(command)
 
-			command = "sleep #{$props['firefox_safemode_wait']}"
+			sleep_cmd = "sleep #{$props['firefox_safemode_wait']}"
+			BigBlueButton.execute(sleep_cmd)
+
+			command = "export DISPLAY=:#{display_id} && xdotool key Return"
 			BigBlueButton.execute(command)
 
-			command = "DISPLAY=:#{display_id} xdotool key Return"
+			BigBlueButton.execute(sleep_cmd)
+
+			command = "export DISPLAY=:#{display_id} && xdotool mousemove #{$props['firefox_width'] - 14} 100 && xdotool click 1"
+			BigBlueButton.logger.info("Closing firefox upper message")
 			BigBlueButton.execute(command)
+
+			command = "sleep 1"
+			BigBlueButton.execute(command)			
 		end
 
 		# RecordMyDesktop PID
@@ -82,7 +95,7 @@ module BigBlueButton
 			rmd_command = "recordmydesktop #{main_props} #{size_props} #{offset_props}"
 
 			# Blocking is better to ensure we will wait until the video starts being recorded
-			command = "DISPLAY=:#{display_id} xdotool mousemove #{$props['play_button_x_position']} #{$props['play_button_y_position']} & xdotool click 1"
+			command = "export DISPLAY=:#{display_id} && xdotool mousemove #{$props['play_button_x_position']} #{$props['play_button_y_position']} && xdotool click 1"
 			BigBlueButton.logger.info("Task: Playing video in display ID #{display_id} by clicking on play button")
 			BigBlueButton.execute(command)
 
