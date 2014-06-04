@@ -39,7 +39,7 @@ function deploy_format() {
 }
 
 deploy_format "presentation"
-deploy_format "presentation_video"
+#deploy_format "presentation_video"
 
 sudo mkdir -p /var/bigbluebutton/playback/
 sudo mkdir -p /var/bigbluebutton/recording/raw/

@@ -1,0 +1,32 @@
+# @author Felipe Mathias Schmidt, PRAV - MConf (UFRGS)
+#
+# This file has all necessary parameters to record the presentations and export as ogv or
+# any other desirable format - just need to convert the output file.
+
+publish_dir: /var/bigbluebutton/published/presentation_video
+playback_dir: /var/bigbluebutton/playback/presentation_video
+
+firefox_home: /tmp/firefox_presentation_video
+firefox_profile: /tmp/firefox_presentation_video/new_profile/
+
+#1400x768x24
+display_setting: 1600x900x24
+firefox_width: 1600
+firefox_height: 900
+firefox_safemode_wait: 5
+xvfb_wait: 10
+# 196 
+play_button_x_position: 283
+# 720
+play_button_y_position: 740
+# 1184 1212
+record_window_width: 1212
+# 560 588
+record_window_height: 588
+# 216 256
+record_window_x_offset: 256
+# 148 128
+record_window_y_offset: 128
+display_first_id: 95
+display_last_id: 96
+playback_link_prefix: "playback/presentation/playback.html"
