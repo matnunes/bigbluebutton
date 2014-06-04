@@ -6,6 +6,9 @@
 publish_dir: /var/bigbluebutton/published/presentation_video
 playback_dir: /var/bigbluebutton/playback/presentation_video
 
+presentation_published_dir: /var/bigbluebutton/published/presentation
+presentation_unpublished_dir: /var/bigbluebutton/unpublished/presentation
+
 firefox_home: /tmp/firefox_presentation_video
 firefox_profile: /tmp/firefox_presentation_video/new_profile/
 

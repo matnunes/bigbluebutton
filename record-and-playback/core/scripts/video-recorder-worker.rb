@@ -51,7 +51,7 @@ def record_meeting(meetings_dir)
 
       BigBlueButton.logger.error("Recording: #{mr}")    
 
-      command = "sudo -u tomcat6 ruby record/video_recorder.rb -m #{meeting_id}"
+      command = "sudo -u tomcat6 ruby record/presentation_video.rb -m #{meeting_id}"
       BibBlueButton.execute(command)
 
       BigBlueButton.logger.error("Function EXECUTED")
