@@ -38,6 +38,7 @@ require 'recordandplayback/generators/presentation'
 require 'open4'
 require 'pp'
 require 'absolute_time'
+require 'background_process'
 
 module BigBlueButton
   class MissingDirectoryException < RuntimeError
@@ -101,6 +102,26 @@ module BigBlueButton
     FileTest.directory?(dir)
   end
     
+  # Flag defines to run unix command in background.
+  # If no flag is passed, ruby calls the last defined function, which executes the command in foreground
+  #
+  # Input:
+  # -command: unix terminal command
+  # -flag: use "-b" to execute in background
+  #
+  # Output:
+  # -process: an object to control the fired process (all methods of background_process can be called)
+  def self.execute(command, flag="-b")    
+    if (flag == "-b")
+      BigBlueButton.logger.info("Executing in background: #{command}")
+      process = BackgroundProcess.run(command)
+    else
+      BigBlueButton.logger.error("Invalid argument \"#{flag}\"")
+    end
+
+    return process
+  end
+
   def self.execute(command, fail_on_error=true)
     status = ExecutionStatus.new
     status.detailedStatus = Open4::popen4(command) do | pid, stdin, stdout, stderr|
