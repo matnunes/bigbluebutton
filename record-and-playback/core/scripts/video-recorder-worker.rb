@@ -29,8 +29,6 @@ logger = Logger.new("/var/log/bigbluebutton/video-recorder-worker.log",'daily' )
 logger.level = Logger::ERROR
 BigBlueButton.logger = logger
 
-BigBlueButton.logger.error("I AM HEREE")
-
 def record_meeting(meetings_dir)
   props = YAML::load(File.open('bigbluebutton.yml'))
   presentation_video_dir = props['presentation_video']
@@ -38,28 +36,26 @@ def record_meeting(meetings_dir)
   if (Dir.exists?("#{meetings_dir}/presentation"))
     rec_meetings = Dir.entries("#{presentation_video_dir}") - ['.','..']
     proc_meetings = Dir.entries("#{meetings_dir}/presentation") - ['.','..']
-
-    BigBlueButton.logger.error("Recorded: #{rec_meetings}")
+    
     BigBlueButton.logger.error("Processed: #{proc_meetings}")
+    BigBlueButton.logger.error("Recorded: #{rec_meetings}")
 
     # Ignore recorded meetings
     meetings_to_record = proc_meetings - rec_meetings
 
     BigBlueButton.logger.error("To record: #{meetings_to_record}")
 
-    meetings_to_record.each do |mr|
+    meetings_to_record.each do |mr|      
 
-      BigBlueButton.logger.error("Recording: #{mr}")    
-
-      command = "sudo -u tomcat6 ruby record/presentation_video.rb -m #{meeting_id}"
-      BibBlueButton.execute(command)
+      command = "ruby record/presentation_video.rb -m #{mr}"
+      #recording = BigBlueButton.execute_background(command)
+      #recording.wait
+      BigBlueButton.execute(command)
 
       BigBlueButton.logger.error("Function EXECUTED")
     end
   end
 end
-
-BigBlueButton.logger.error("NOW HEREE")
 
 props = YAML::load(File.open('bigbluebutton.yml'))
 published_dir = props['published_dir']

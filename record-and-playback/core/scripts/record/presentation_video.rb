@@ -49,23 +49,19 @@ BigBlueButton.logger = logger
 
 BigBlueButton.logger.info("Trying to record meeting #{meeting_id}")
 
-#print "Target dir #{target_dir}\n"
+test = FileTest.directory?(target_dir)
 
-#print "#{presentation_published_dir}\n"
-#print "#{presentation_published_dir}\n"
+BigBlueButton.logger.info("Target dir: #{target_dir} - #{test}")
+
 
 if not FileTest.directory?(target_dir)
   BigBlueButton.logger.info("#{target_dir} does not exists")
 
-#  print "Dir does not exists\n"
-
   publish_dir = "#{recording_dir}/publish/presentation/#{meeting_id}"
 
-# print "Publish dir #{publish_dir}\n"
   if FileTest.directory?(publish_dir)
     # this recording has already been published (or publish processed), need to 
     # figure out if it's published or unpublished
-#    print "Publish dir exists\n"
     meeting_published_dir = "#{presentation_published_dir}/#{meeting_id}"
     if not FileTest.directory?(meeting_published_dir)
       meeting_published_dir = "#{presentation_unpublished_dir}/#{meeting_id}"

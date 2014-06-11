@@ -102,23 +102,10 @@ module BigBlueButton
     FileTest.directory?(dir)
   end
     
-  # Flag defines to run unix command in background.
-  # If no flag is passed, ruby calls the last defined function, which executes the command in foreground
-  #
-  # Input:
-  # -command: unix terminal command
-  # -flag: use "-b" to execute in background
-  #
-  # Output:
-  # -process: an object to control the fired process (all methods of background_process can be called)
-  def self.execute(command, flag="-b")    
-    if (flag == "-b")
-      BigBlueButton.logger.info("Executing in background: #{command}")
-      process = BackgroundProcess.run(command)
-    else
-      BigBlueButton.logger.error("Invalid argument \"#{flag}\"")
-    end
-
+  def self.execute_background(command)    
+    BigBlueButton.logger.info("Executing in background: #{command}")
+    BigBlueButton.logger.error("Executing in background: #{command}")
+    process = BackgroundProcess.run(command)
     return process
   end
 

@@ -14,7 +14,7 @@
 # For further configuration you can change the 'record.conf' file, sourced in the beggining of this script.
 
 # Configuration file to main recording parameters
-. /usr/local/bigbluebutton/core/scripts/process/record.conf
+. /usr/local/bigbluebutton/core/scripts/record/record.conf
 
 # Input parameters
 DISPLAY_ID=$1
