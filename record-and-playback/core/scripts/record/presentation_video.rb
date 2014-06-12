@@ -35,57 +35,24 @@ meeting_id = opts[:meeting_id]
 bbb_props = YAML::load(File.open('../../core/scripts/bigbluebutton.yml'))
 recording_dir = bbb_props['recording_dir']
 
-props = YAML::load(File.open('presentation_video.yml'))
-presentation_published_dir = props['presentation_published_dir']
-presentation_unpublished_dir = props['presentation_unpublished_dir']
-playback_dir = props['playback_dir']
-
 target_dir = "#{recording_dir}/process/presentation_video/#{meeting_id}"
 
-# this recording has never been processed
 FileUtils.mkdir_p "/var/log/bigbluebutton/presentation_video"
 logger = Logger.new("/var/log/bigbluebutton/presentation_video/process-#{meeting_id}.log", 'daily' )
 BigBlueButton.logger = logger
 
-BigBlueButton.logger.info("Trying to record meeting #{meeting_id}")
+BigBlueButton.logger.info("Trying to record meeting #{meeting_id} using presentation_video.rb")
 
-test = FileTest.directory?(target_dir)
-
-BigBlueButton.logger.info("Target dir: #{target_dir} - #{test}")
-
-
+# This recording has never been processed
 if not FileTest.directory?(target_dir)
-  BigBlueButton.logger.info("#{target_dir} does not exists")
+  BigBlueButton.logger.info("Target dir #{target_dir} for meeting does not exists. Creating dir.")
+  FileUtils.mkdir_p target_dir
 
-  publish_dir = "#{recording_dir}/publish/presentation/#{meeting_id}"
-
-  if FileTest.directory?(publish_dir)
-    # this recording has already been published (or publish processed), need to 
-    # figure out if it's published or unpublished
-    meeting_published_dir = "#{presentation_published_dir}/#{meeting_id}"
-    if not FileTest.directory?(meeting_published_dir)
-      meeting_published_dir = "#{presentation_unpublished_dir}/#{meeting_id}"
-      if not FileTest.directory?(meeting_published_dir)
-        meeting_published_dir = nil
-      end
-    end
-
-#    print "Meeting published dir #{meeting_published_dir} \n"
-
-    if meeting_published_dir
-      #print "Published dir\n"
-      BigBlueButton.logger.info("Processing script presentation_video.rb")
-      FileUtils.mkdir_p target_dir
-
-      video_recorder = BigBlueButton::VideoRecorder.new()
-      video_recorder.target_dir = target_dir
-      video_recorder.record meeting_id
-      
-      process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
-      process_done.write("Processed #{meeting_id}")
-      process_done.close
-    end
-  end
+  video_recorder = BigBlueButton::VideoRecorder.new()
+  video_recorder.target_dir = target_dir
+  video_recorder.record meeting_id
+  
+  record_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
+  record_done.write("Recorded #{meeting_id}")
+  record_done.close
 end
-
-#print "finish\n"

@@ -60,7 +60,19 @@ end
 props = YAML::load(File.open('bigbluebutton.yml'))
 published_dir = props['published_dir']
 unpublished_dir = props['unpublished_dir']
-record_meeting(published_dir)
-record_meeting(unpublished_dir)
+
+# This script must be always alive
+#while true
+
+  # Get number at recording pool
+
+  # If number not null, start recording the new meeting
+
+  # Wait a while until start recording a new meeting
+#  BigBlueButton.execute("sleep 10")
+
+  record_meeting(published_dir)
+  record_meeting(unpublished_dir)
+#end
 
 BigBlueButton.logger.error("IN THE END")

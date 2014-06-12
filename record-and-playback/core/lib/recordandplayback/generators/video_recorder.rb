@@ -239,17 +239,3 @@ module BigBlueButton
 		end
 	end
 end
-
-=begin
-BigBlueButton.logger = Logger.new('/var/log/bigbluebutton/presentation_video/video-recorder.log', 'daily' )
-
-opts = Trollop::options do
-  opt :meeting_id, "Meeting id to archive", :default => '58f4a6b3-cd07-444d-8564-59116cb53974', :type => String
-end
-
-meeting_id = opts[:meeting_id]
-
-BigBlueButton.logger.info("Start recording meeting #{meeting_id}")
-
-BigBlueButton::VideoRecorder.new.myfunc(meeting_id)
-=end
