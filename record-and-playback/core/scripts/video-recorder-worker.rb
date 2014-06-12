@@ -29,50 +29,46 @@ logger = Logger.new("/var/log/bigbluebutton/video-recorder-worker.log",'daily' )
 logger.level = Logger::ERROR
 BigBlueButton.logger = logger
 
-def record_meeting(meetings_dir)
-  props = YAML::load(File.open('bigbluebutton.yml'))
+def record_meeting
+  props = YAML::load(File.open('bigbluebutton.yml'))  
+  published_dir = props['published_dir']
+  unpublished_dir = props['unpublished_dir']
   presentation_video_dir = props['presentation_video']
 
-  if (Dir.exists?("#{meetings_dir}/presentation"))
-    rec_meetings = Dir.entries("#{presentation_video_dir}") - ['.','..']
-    proc_meetings = Dir.entries("#{meetings_dir}/presentation") - ['.','..']
-    
-    BigBlueButton.logger.error("Processed: #{proc_meetings}")
-    BigBlueButton.logger.error("Recorded: #{rec_meetings}")
+  while true
+    Dir.exists?("#{published_dir}/presentation") ? 
+      published_meetings = Dir.entries("#{published_dir}/presentation") - ['.','..'] :
+      published_meetings = ['']
 
-    # Ignore recorded meetings
-    meetings_to_record = proc_meetings - rec_meetings
+    Dir.exists?("#{unpublished_dir}/presentation") ? 
+      unpublished_meetings = Dir.entries("#{unpublished_dir}/presentation") - ['.','..'] :
+      unpublished_meetings = ['']  
+
+    Dir.exists?("#{presentation_video_dir}") ? 
+      recorded_meetings = Dir.entries("#{presentation_video_dir}") - ['.','..'] :
+      recorded_meetings = ['']
+
+    BigBlueButton.logger.error("Published: #{published_meetings}")
+    BigBlueButton.logger.error("Unpublished: #{unpublished_meetings}")
+    BigBlueButton.logger.error("Recorded: #{recorded_meetings}")
+
+    meetings_to_record = published_meetings + unpublished_meetings - recorded_meetings - ['']
 
     BigBlueButton.logger.error("To record: #{meetings_to_record}")
 
-    meetings_to_record.each do |mr|      
+    meetings_to_record.each do |mr|
 
       command = "ruby record/presentation_video.rb -m #{mr}"
-      #recording = BigBlueButton.execute_background(command)
-      #recording.wait
-      BigBlueButton.execute(command)
+      BigBlueButton.execute_background(command)
 
-      BigBlueButton.logger.error("Function EXECUTED")
+      BigBlueButton.logger.error("Meeting #{mr} added to pool")
     end
+
+    # Sleep a while until searching for new meetings
+    BigBlueButton.execute("sleep 30")
   end
 end
 
-props = YAML::load(File.open('bigbluebutton.yml'))
-published_dir = props['published_dir']
-unpublished_dir = props['unpublished_dir']
+record_meeting
 
-# This script must be always alive
-#while true
-
-  # Get number at recording pool
-
-  # If number not null, start recording the new meeting
-
-  # Wait a while until start recording a new meeting
-#  BigBlueButton.execute("sleep 10")
-
-  record_meeting(published_dir)
-  record_meeting(unpublished_dir)
-#end
-
-BigBlueButton.logger.error("IN THE END")
+BigBlueButton.logger.error("PROCESS TERMINATED")
