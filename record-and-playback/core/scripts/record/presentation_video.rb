@@ -27,9 +27,11 @@ require '../lib/recordandplayback/generators/video_recorder'
 
 opts = Trollop::options do
   opt :meeting_id, "Meeting id to archive", :default => '58f4a6b3-cd07-444d-8564-59116cb53974', :type => String
+  opt :display_id, "Display id to use", :default => '98', :type => String
 end
 
 meeting_id = opts[:meeting_id]
+display_id = opts[:display_id]
 
 # This script lives in scripts/archive/steps while properties.yaml lives in scripts/
 bbb_props = YAML::load(File.open('../../core/scripts/bigbluebutton.yml'))
@@ -50,7 +52,7 @@ if not FileTest.directory?(target_dir)
 
   video_recorder = BigBlueButton::VideoRecorder.new()
   video_recorder.target_dir = target_dir
-  video_recorder.record meeting_id
+  video_recorder.record(meeting_id, display_id)
   
   record_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
   record_done.write("Recorded #{meeting_id}")

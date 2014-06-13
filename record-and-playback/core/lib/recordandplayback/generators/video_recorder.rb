@@ -186,7 +186,7 @@ module BigBlueButton
 		# This converts a playback meeting and outputs a out.avi file at bigbluebutton/published/#{meeting_id}
 		#
 		#   meeting_id - meeting id of video to be converted
-		def record(meeting_id)
+		def record(meeting_id, display_id)
 			BigBlueButton.logger.info("Preparing to record meeting #{meeting_id}.")
 
 			audio_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
@@ -196,7 +196,7 @@ module BigBlueButton
 			# Getting time in millis from wav file, will be the recording time
 			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
 
-			display_id = self.get_free_display
+			#display_id = self.get_free_display
 
 			recorded_screen_raw_file = "#{target_dir}/recorded_screen_raw.ogv"
 			

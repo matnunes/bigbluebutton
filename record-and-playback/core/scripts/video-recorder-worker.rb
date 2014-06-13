@@ -24,10 +24,63 @@ require '../lib/recordandplayback'
 require 'rubygems'
 require 'yaml'
 require 'fileutils'
+require 'thread'
 
 logger = Logger.new("/var/log/bigbluebutton/video-recorder-worker.log",'daily' )
 logger.level = Logger::ERROR
 BigBlueButton.logger = logger
+
+$props = YAML::load(File.open('presentation_video.yml'))
+$bbb_props = YAML::load(File.open('bigbluebutton.yml'))
+
+@virtual_displays = [*$props['display_first_id']..$props['display_last_id']]
+@display_mutex = Mutex.new 
+
+recordings = Array.new
+
+# SYNCHRONIZED: This pops a display id from display id list.
+def pop_free_display    
+  @display_mutex.synchronize do
+    display_id = @virtual_displays.pop
+    BigBlueButton.logger.error("Got display ID: #{display_id}.")
+    return display_id
+  end
+end
+
+# SYNCHRONIZED: This 'gives back a display' by pushing the used id back to virtual display list 
+#
+#   display_id - id of used display
+def push_free_display(display_id)
+  BigBlueButton.logger.error("Pushing used display ID #{display_id} back to display pool.")
+  @display_mutex.synchronize do
+    @virtual_displays.push(display_id)
+  end
+end
+
+# This retrieves an available display id to be used. If no display is available after 20 seconds,
+# it returns nil
+#
+# @Return
+#   display_id - ID of virtual display
+def get_free_display
+  BigBlueButton.logger.error("Trying to get free display ID from display pool.")
+  display_id = pop_free_display
+  sleep_count = 0
+
+  while display_id == nil
+    BigBlueButton.logger.error("Waiting for free display ID.")
+    sleep(2)
+    sleep_count += 1
+    display_id = pop_free_display
+
+    if sleep_count >= 5
+      BigBlueButton.logger.error("No free display after 5 tries. Returning nil.")
+      return nil
+    end
+  end
+
+  return display_id
+end
 
 def record_meeting
   props = YAML::load(File.open('bigbluebutton.yml'))  
@@ -36,7 +89,10 @@ def record_meeting
   presentation_video_dir = props['presentation_video']
 
   while true
+    #Criar passo de verificação pra ver se meeting foi corretamente gravada
+
     Dir.exists?("#{published_dir}/presentation") ? 
+
       published_meetings = Dir.entries("#{published_dir}/presentation") - ['.','..'] :
       published_meetings = ['']
 
@@ -58,14 +114,31 @@ def record_meeting
 
     meetings_to_record.each do |mr|
 
-      command = "ruby record/presentation_video.rb -m #{mr}"
-      BigBlueButton.execute_background(command)
+      display_id = get_free_display
 
-      BigBlueButton.logger.error("Meeting #{mr} added to pool")
+      if (display_id != nil)
+        command = "ruby record/presentation_video.rb -m #{mr} -d #{display_id}"
+        recordings << [BigBlueButton.execute_background(command), display_id]
+
+        BigBlueButton.logger.error("Meeting #{mr} added to pool")
+      else
+        BigBlueButton.logger.error("Didnt get free display")
+      end
     end
 
     # Sleep a while until searching for new meetings
-    BigBlueButton.execute("sleep 30")
+    BigBlueButton.execute("sleep 10")
+
+    recordings.each do |rec|
+      BigBlueButton.logger.error("Process: #{rec[0].running?} -> id #{rec[1]}")
+
+      if not rec[0].running?
+        push_free_display(rec[1])
+        recordings.delete(rec)
+        recordings.delete(rec)
+      end
+    end
+
   end
 end
 
