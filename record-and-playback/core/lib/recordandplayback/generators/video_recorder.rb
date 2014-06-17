@@ -238,20 +238,24 @@ module BigBlueButton
 			converted_video_file = "#{raw_dir}/meeting"
 			BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, converted_video_file, 0)
 
-
 			# TODO: Check if the recording is OK.
 
-			# After recorded, create final dir, move files to final dir, check if the files were correctly moved
-			# and finally delete the raw dir
+			# After recorded, move files to final dir, check if the files were correctly moved
+			# and finally delete the raw dir.
+			# If any problem, delete target dir. This makes the worker try to record the meeting again.
 			BigBlueButton.logger.debug("Copying files from #{raw_dir} to #{target_dir}")
+
 			FileUtils.cp_r(Dir.glob("#{raw_dir}/*"), Dir.glob("#{target_dir}/"))
 
-			BigBlueButton.logger.info("Meeting #{meeting_id} recorded!")
-		end
-
-		def myfunc(wr)
-			print "#{wr}\n"
-			BigBlueButton.logger.info("My func #{wr}")
+			if File.file?("#{target_dir}/meeting.webm") and File.file?("#{target_dir}/recorded_screen_raw.ogv")
+				BigBlueButton.logger.info("Files moved successfully")
+				FileUtils.rm_r("#{raw_dir}")
+				BigBlueButton.logger.info("Meeting #{meeting_id} recorded!")
+			else
+				# We remove the target dir in order to force the meeting to be recorded again
+				FileUtils.rm_r("#{target_dir}")
+				BigBlueButton.logger.info("Problems while recording meeting #{meeting_id}")
+			end						
 		end
 	end
 end
