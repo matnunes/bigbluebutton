@@ -23,6 +23,8 @@ module BigBlueButton
 
 		attr_accessor :target_dir
 
+		attr_accessor :raw_dir
+
 		# Xvfb PID
 		attr_accessor :xvfb
 
@@ -191,15 +193,19 @@ module BigBlueButton
 
 			audio_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
 
-			web_link = "http://#{$bbb_props['playback_host']}/#{$props['playback_link_prefix']}?meetingId=#{meeting_id}"
+			web_link = "http://#{$bbb_props['playback_host']}/#{$props['playback_link_prefix']}?meetrecorded_screen_raw_fileingId=#{meeting_id}"
 
 			# Getting time in millis from wav file, will be the recording time
 			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
 
 			#display_id = self.get_free_display
 
-			recorded_screen_raw_file = "#{target_dir}/recorded_screen_raw.ogv"
+			#raw_files_dir = "#{$bbb_props['raw_presentation_video_src']}/#{meeting_id}/presentation_video/"			
+
+			recorded_screen_raw_file = "#{raw_dir}/recorded_screen_raw.ogv"
 			
+			BigBlueButton.logger.debug("Raw dir: #{raw_dir} Target dir: #{target_dir}")
+
 			BigBlueButton.logger.debug("CREATE VIRTUAL DISPLAY")
 			self.create_virtual_display(display_id)
 
@@ -229,8 +235,18 @@ module BigBlueButton
 				]
 			}
 
-			final_video_file = "#{target_dir}/meeting"
-			BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, final_video_file, 0)
+			converted_video_file = "#{raw_dir}/meeting"
+			BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, converted_video_file, 0)
+
+
+			# TODO: Check if the recording is OK.
+
+			# After recorded, create final dir, move files to final dir, check if the files were correctly moved
+			# and finally delete the raw dir
+			BigBlueButton.logger.debug("Copying files from #{raw_dir} to #{target_dir}")
+			FileUtils.cp_r(Dir.glob("#{raw_dir}/*"), Dir.glob("#{target_dir}/"))
+
+			BigBlueButton.logger.info("Meeting #{meeting_id} recorded!")
 		end
 
 		def myfunc(wr)

@@ -36,22 +36,30 @@ display_id = opts[:display_id]
 # This script lives in scripts/archive/steps while properties.yaml lives in scripts/
 bbb_props = YAML::load(File.open('../../core/scripts/bigbluebutton.yml'))
 recording_dir = bbb_props['recording_dir']
+raw_dir = bbb_props['raw_presentation_video_src']
 
 target_dir = "#{recording_dir}/process/presentation_video/#{meeting_id}"
+raw_files_dir = "#{raw_dir}/#{meeting_id}/presentation_video"
 
 FileUtils.mkdir_p "/var/log/bigbluebutton/presentation_video"
 logger = Logger.new("/var/log/bigbluebutton/presentation_video/process-#{meeting_id}.log", 'daily' )
 BigBlueButton.logger = logger
 
-BigBlueButton.logger.info("Trying to record meeting #{meeting_id} using presentation_video.rb")
+BigBlueButton.logger.info("Trying to record meeting #{meeting_id} at display #{display_id} using presentation_video.rb")
 
 # This recording has never been processed
 if not FileTest.directory?(target_dir)
   BigBlueButton.logger.info("Target dir #{target_dir} for meeting does not exists. Creating dir.")
   FileUtils.mkdir_p target_dir
 
+  if not FileTest.directory?(raw_files_dir)
+    BigBlueButton.logger.info("Raw file dir #{raw_files_dir} for meeting does not exists. Creating dir.")
+    FileUtils.mkdir_p raw_files_dir
+  end
+
   video_recorder = BigBlueButton::VideoRecorder.new()
   video_recorder.target_dir = target_dir
+  video_recorder.raw_dir = raw_files_dir
   video_recorder.record(meeting_id, display_id)
   
   record_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")

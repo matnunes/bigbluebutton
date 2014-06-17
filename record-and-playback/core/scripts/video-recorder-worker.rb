@@ -33,16 +33,18 @@ BigBlueButton.logger = logger
 $props = YAML::load(File.open('presentation_video.yml'))
 $bbb_props = YAML::load(File.open('bigbluebutton.yml'))
 
-@virtual_displays = [*$props['display_first_id']..$props['display_last_id']]
-@display_mutex = Mutex.new 
+$virtual_displays = [*$props['display_first_id']..$props['display_last_id']]
+$display_mutex = Mutex.new 
 
-recordings = Array.new
+$recordings = Array.new
 
 # SYNCHRONIZED: This pops a display id from display id list.
 def pop_free_display    
-  @display_mutex.synchronize do
-    display_id = @virtual_displays.pop
-    BigBlueButton.logger.error("Got display ID: #{display_id}.")
+  $display_mutex.synchronize do
+    display_id = virtual_displays.pop
+    if display_id != nil
+      BigBlueButton.logger.error("Got display ID: #{display_id}.")
+    end
     return display_id
   end
 end
@@ -52,8 +54,8 @@ end
 #   display_id - id of used display
 def push_free_display(display_id)
   BigBlueButton.logger.error("Pushing used display ID #{display_id} back to display pool.")
-  @display_mutex.synchronize do
-    @virtual_displays.push(display_id)
+  $display_mutex.synchronize do
+    $virtual_displays.push(display_id)
   end
 end
 
@@ -112,30 +114,33 @@ def record_meeting
 
     BigBlueButton.logger.error("To record: #{meetings_to_record}")
 
+    # Worker is istantiated only once!
     meetings_to_record.each do |mr|
 
-      display_id = get_free_display
+      #display_id = get_free_display
+      display_id = $virtual_displays.pop
 
       if (display_id != nil)
         command = "ruby record/presentation_video.rb -m #{mr} -d #{display_id}"
-        recordings << [BigBlueButton.execute_background(command), display_id]
+        $recordings << [BigBlueButton.execute_background(command), display_id]
 
         BigBlueButton.logger.error("Meeting #{mr} added to pool")
       else
-        BigBlueButton.logger.error("Didnt get free display")
-      end
+        BigBlueButton.logger.error("No free display. Meeting #{mr} will be recorded later.")
+      end      
     end
 
     # Sleep a while until searching for new meetings
     BigBlueButton.execute("sleep 10")
 
-    recordings.each do |rec|
-      BigBlueButton.logger.error("Process: #{rec[0].running?} -> id #{rec[1]}")
+    $recordings.each do |rec|
+      BigBlueButton.logger.error("Process at display display #{rec[1]} running? #{rec[0].running?}")
 
       if not rec[0].running?
-        push_free_display(rec[1])
-        recordings.delete(rec)
-        recordings.delete(rec)
+        BigBlueButton.logger.error("Pushing display #{rec[1]} back to display pool")
+        $virtual_displays.push(rec[1])
+        #push_free_display(rec[1])
+        $recordings.delete(rec)
       end
     end
 
