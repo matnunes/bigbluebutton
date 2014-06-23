@@ -48,14 +48,14 @@ BigBlueButton.logger = logger
 BigBlueButton.logger.info("Trying to record meeting #{meeting_id} at display #{display_id} using presentation_video.rb")
 
 # This recording has never been processed
-if not FileTest.directory?(target_dir)
-  BigBlueButton.logger.info("Target dir #{target_dir} for meeting does not exists. Creating dir.")
-  FileUtils.mkdir_p target_dir
+if not FileTest.directory?(target_dir)  
 
+=begin
   if not FileTest.directory?(raw_files_dir)
     BigBlueButton.logger.info("Raw file dir #{raw_files_dir} for meeting does not exists. Creating dir.")
     FileUtils.mkdir_p raw_files_dir
   end
+=end
 
   video_recorder = BigBlueButton::VideoRecorder.new()
   video_recorder.target_dir = target_dir

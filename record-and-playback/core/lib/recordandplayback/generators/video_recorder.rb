@@ -200,9 +200,18 @@ module BigBlueButton
 
 			#display_id = self.get_free_display
 
-			#raw_files_dir = "#{$bbb_props['raw_presentation_video_src']}/#{meeting_id}/presentation_video/"			
+			#raw_files_dir = "#{$bbb_props['raw_presentation_video_src']}/#{meeting_id}/presentation_video/"						
 
-			recorded_screen_raw_file = "#{raw_dir}/recorded_screen_raw.ogv"
+			if not FileTest.directory?(raw_dir)
+				BigBlueButton.logger.info("Raw dir #{target_dir} for meeting does not exists. Creating it.")
+				FileUtils.mkdir_p raw_dir
+			else				
+				BigBlueButton.logger.info("Raw file dir #{raw_dir} for meeting already exists. Refreshing it.")
+  				FileUtils.rm_r raw_dir  				
+    			FileUtils.mkdir_p raw_dir
+    		end  		
+
+    		recorded_screen_raw_file = "#{raw_dir}/recorded_screen_raw.ogv"
 			
 			BigBlueButton.logger.debug("Raw dir: #{raw_dir} Target dir: #{target_dir}")
 
@@ -239,6 +248,9 @@ module BigBlueButton
 			BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, converted_video_file, 0)
 
 			# TODO: Check if the recording is OK.
+
+			BigBlueButton.logger.info("Target dir #{target_dir} for meeting does not exists. Creating dir.")
+  			FileUtils.mkdir_p target_dir
 
 			# After recorded, move files to final dir, check if the files were correctly moved
 			# and finally delete the raw dir.
