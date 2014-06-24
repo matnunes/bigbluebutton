@@ -1,16 +1,10 @@
-#require 'background_process' #https://github.com/timcharper/background_process https://rubygems.org/gems/background_process
 require 'yaml'
-require 'thread'
-require 'trollop'
-
 require '../../core/lib/recordandplayback'
 
 module BigBlueButton
 
 	# All necessary bash commands to output a video
 	class VideoRecorder
-
-#		include Singleton
 
 		# Load yaml file with recording properties
 		$props = YAML::load(File.open('presentation_video.yml'))
@@ -141,50 +135,6 @@ module BigBlueButton
 			BigBlueButton.execute(command)
 		end
 
-		# SYNCHRONIZED: This pops a display id from display id list.
-		def pop_free_display		
-			@display_mutex.synchronize do
-				display_id = @virtual_displays.pop
-				BigBlueButton.logger.info("Got display ID: #{display_id}.")
-				return display_id
-			end
-		end
-
-		# SYNCHRONIZED: This 'gives back a display' by pushing the used id back to virtual display list 
-		#
-		#   display_id - id of used display
-		def push_free_display(display_id)
-			BigBlueButton.logger.info("Pushing used display ID #{display_id} back to display pool.")
-			@display_mutex.synchronize do
-				@virtual_displays.push(display_id)
-			end
-		end
-
-		# This retrieves an available display id to be used. If no display is available after 20 seconds,
-		# it returns nil
-		#
-		# @Return
-		#   display_id - ID of virtual display
-		def get_free_display
-			BigBlueButton.logger.info("Trying to get free display ID from display pool.")
-			display_id = self.pop_free_display
-			sleep_count = 0
-
-			while display_id == nil
-				BigBlueButton.logger.info("Waiting for free display ID.")
-				sleep(2)
-				sleep_count += 1
-				display_id = self.pop_free_display
-
-				if sleep_count >= 5
-					BigBlueButton.logger.info("No free display after 5 tries. Returning nil.")
-					return nil
-				end
-			end
-
-			return display_id
-		end
-
 		# This converts a playback meeting and outputs a out.avi file at bigbluebutton/published/#{meeting_id}
 		#
 		#   meeting_id - meeting id of video to be converted
@@ -197,10 +147,6 @@ module BigBlueButton
 
 			# Getting time in millis from wav file, will be the recording time
 			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
-
-			#display_id = self.get_free_display
-
-			#raw_files_dir = "#{$bbb_props['raw_presentation_video_src']}/#{meeting_id}/presentation_video/"						
 
 			if not FileTest.directory?(raw_dir)
 				BigBlueButton.logger.info("Raw dir #{target_dir} for meeting does not exists. Creating it.")
@@ -227,12 +173,8 @@ module BigBlueButton
 			BigBlueButton.logger.debug("KILLING REMAINING PROCESSES")
 			self.end_processes
 
-			#BigBlueButton.logger.debug("RECORD BY SCRIPT TO TEST DISPLAY VARIABLES")
-			# Start the recording process
+			# Record using script
 			#self.record_by_script(display_id, audio_lenght, web_link, recorded_screen_raw_file)
-
-			# Free used virtual display
-			self.push_free_display(display_id)
 
 			format = {
 				:extension => 'webm',
@@ -262,11 +204,11 @@ module BigBlueButton
 			if File.file?("#{target_dir}/meeting.webm") and File.file?("#{target_dir}/recorded_screen_raw.ogv")
 				BigBlueButton.logger.info("Files moved successfully")
 				FileUtils.rm_r("#{raw_dir}")
-				BigBlueButton.logger.info("Meeting #{meeting_id} recorded!")
+				BigBlueButton.logger.info("Meeting #{meeting_id} recorded using display #{display_id}!")
 			else
 				# We remove the target dir in order to force the meeting to be recorded again
 				FileUtils.rm_r("#{target_dir}")
-				BigBlueButton.logger.info("Problems while recording meeting #{meeting_id}")
+				BigBlueButton.logger.info("Problems while recording meeting #{meeting_id} at display #{display_id}")
 			end						
 		end
 	end
