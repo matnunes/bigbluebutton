@@ -50,19 +50,8 @@ BigBlueButton.logger.info("Trying to record meeting #{meeting_id} at display #{d
 # This recording has never been processed
 if not FileTest.directory?(target_dir)  
 
-=begin
-  if not FileTest.directory?(raw_files_dir)
-    BigBlueButton.logger.info("Raw file dir #{raw_files_dir} for meeting does not exists. Creating dir.")
-    FileUtils.mkdir_p raw_files_dir
-  end
-=end
-
   video_recorder = BigBlueButton::VideoRecorder.new()
   video_recorder.target_dir = target_dir
   video_recorder.raw_dir = raw_files_dir
   video_recorder.record(meeting_id, display_id)
-  
-  record_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
-  record_done.write("Recorded #{meeting_id}")
-  record_done.close
 end
