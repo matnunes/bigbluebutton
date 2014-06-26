@@ -143,7 +143,7 @@ module BigBlueButton
 
 			audio_file = "#{$bbb_props['published_dir']}/presentation/#{meeting_id}/audio/audio.ogg"
 
-			web_link = "http://#{$bbb_props['playback_host']}/#{$props['playback_link_prefix']}?meetrecorded_screen_raw_fileingId=#{meeting_id}"
+			web_link = "http://#{$bbb_props['playback_host']}/#{$props['playback_link_prefix']}?meetingId=#{meeting_id}"
 
 			# Getting time in millis from wav file, will be the recording time
 			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
