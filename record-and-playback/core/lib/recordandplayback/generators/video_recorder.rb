@@ -100,7 +100,15 @@ module BigBlueButton
 			self.rmd.kill("TERM")
 
 			BigBlueButton.logger.debug("Task: Waiting RecordMyDesktop to flush data to disk. Still running? #{self.rmd.running?}")
-			self.rmd.wait
+
+			seconds = seconds + 30
+			command = "sleep #{seconds}"	
+			BigBlueButton.execute(command)
+
+			self.rmd.kill("KILL")
+
+			#BigBlueButton.logger.info("#{self.rmd.wait}")
+			#self.rmd.wait
 
 			BigBlueButton.logger.info("Task: RecordMyDesktop terminated. Data flushed.")
 		end
@@ -154,7 +162,7 @@ module BigBlueButton
 			else				
 				BigBlueButton.logger.info("Raw file dir #{raw_dir} for meeting already exists. Refreshing it.")
   				FileUtils.rm_r raw_dir  				
-    			FileUtils.mkdir_p raw_dir
+     			FileUtils.mkdir_p raw_dir
     		end  		
 
     		recorded_screen_raw_file = "#{raw_dir}/recorded_screen_raw.ogv"
@@ -162,19 +170,19 @@ module BigBlueButton
 			BigBlueButton.logger.debug("Raw dir: #{raw_dir} Target dir: #{target_dir}")
 
 			BigBlueButton.logger.debug("CREATE VIRTUAL DISPLAY")
-			self.create_virtual_display(display_id)
+			#self.create_virtual_display(display_id)
 
 			BigBlueButton.logger.debug("CREATE FIREFOX")
-			self.fire_firefox(display_id, web_link)
+			#self.fire_firefox(display_id, web_link)
 
 			BigBlueButton.logger.debug("CREATE RECORDING")
-			self.record_video(display_id, audio_lenght, recorded_screen_raw_file)
+			#self.record_video(display_id, audio_lenght, recorded_screen_raw_file)
 
 			BigBlueButton.logger.debug("KILLING REMAINING PROCESSES")
-			self.end_processes
+			#self.end_processes
 
 			# Record using script
-			#self.record_by_script(display_id, audio_lenght, web_link, recorded_screen_raw_file)
+			self.record_by_script(display_id, audio_lenght, web_link, recorded_screen_raw_file)
 
 			format = {
 				:extension => 'webm',
