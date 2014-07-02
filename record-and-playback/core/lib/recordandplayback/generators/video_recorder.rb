@@ -157,10 +157,10 @@ module BigBlueButton
 			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
 
 			if not FileTest.directory?(raw_dir)
-				BigBlueButton.logger.info("Raw dir #{target_dir} for meeting does not exists. Creating it.")
+				BigBlueButton.logger.info("Raw dir #{raw_dir} for meeting does not exists. Creating it.")
 				FileUtils.mkdir_p raw_dir
 			else				
-				BigBlueButton.logger.info("Raw file dir #{raw_dir} for meeting already exists. Refreshing it.")
+				BigBlueButton.logger.info("Raw dir #{raw_dir} for meeting already exists. Refreshing it.")
   				FileUtils.rm_r raw_dir  				
      			FileUtils.mkdir_p raw_dir
     		end  		
@@ -169,19 +169,20 @@ module BigBlueButton
 			
 			BigBlueButton.logger.debug("Raw dir: #{raw_dir} Target dir: #{target_dir}")
 
-			BigBlueButton.logger.debug("CREATE VIRTUAL DISPLAY")
+			#BigBlueButton.logger.debug("CREATE VIRTUAL DISPLAY")
 			#self.create_virtual_display(display_id)
 
-			BigBlueButton.logger.debug("CREATE FIREFOX")
+			#BigBlueButton.logger.debug("CREATE FIREFOX")
 			#self.fire_firefox(display_id, web_link)
 
-			BigBlueButton.logger.debug("CREATE RECORDING")
+			#BigBlueButton.logger.debug("CREATE RECORDING")
 			#self.record_video(display_id, audio_lenght, recorded_screen_raw_file)
 
-			BigBlueButton.logger.debug("KILLING REMAINING PROCESSES")
+			#BigBlueButton.logger.debug("KILLING REMAINING PROCESSES")
 			#self.end_processes
 
 			# Record using script
+			BigBlueButton.logger.debug("START RECORDING USING SCRIPT")
 			self.record_by_script(display_id, audio_lenght, web_link, recorded_screen_raw_file)
 
 			format = {
@@ -197,15 +198,13 @@ module BigBlueButton
 			converted_video_file = "#{raw_dir}/meeting"
 			BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, converted_video_file, 0)
 
-			# TODO: Check if the recording is OK.
-
 			BigBlueButton.logger.info("Target dir #{target_dir} for meeting does not exists. Creating dir.")
   			FileUtils.mkdir_p target_dir
 
 			# After recorded, move files to final dir, check if the files were correctly moved
 			# and finally delete the raw dir.
 			# If any problem, delete target dir. This makes the worker try to record the meeting again.
-			BigBlueButton.logger.debug("Copying files from #{raw_dir} to #{target_dir}")
+			BigBlueButton.logger.debug("Moving files from #{raw_dir} to #{target_dir}")
 
 			FileUtils.cp_r(Dir.glob("#{raw_dir}/*"), Dir.glob("#{target_dir}/"))
 
