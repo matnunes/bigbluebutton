@@ -72,7 +72,11 @@ kill -s 15 $FIREFOX_PID
 # Waiting to store the recorded video
 wait $RECORD_PID
 
+wait $FIREFOX_PID
+
 kill -s 15 $XVFB_PID
+
+wait $XVFB_PID
 
 echo "Recording at display $DISPLAY_ID during $TIME seconds terminated."
 

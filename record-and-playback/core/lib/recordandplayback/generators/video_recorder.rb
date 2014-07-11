@@ -154,7 +154,7 @@ module BigBlueButton
 			web_link = "http://#{$bbb_props['playback_host']}/#{$props['playback_link_prefix']}?meetingId=#{meeting_id}"
 
 			# Getting time in millis from wav file, will be the recording time
-			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000
+			audio_lenght = (BigBlueButton::AudioEvents.determine_length_of_audio_from_file(audio_file)) / 1000			
 
 			if not FileTest.directory?(raw_dir)
 				BigBlueButton.logger.info("Raw dir #{raw_dir} for meeting does not exists. Creating it.")
@@ -163,9 +163,11 @@ module BigBlueButton
 				BigBlueButton.logger.info("Raw dir #{raw_dir} for meeting already exists. Refreshing it.")
   				FileUtils.rm_r raw_dir  				
      			FileUtils.mkdir_p raw_dir
-    		end  		
+    		end  		    		
 
     		recorded_screen_raw_file = "#{raw_dir}/recorded_screen_raw.ogv"
+
+    		BigBlueButton.logger.info("Raw file: #{recorded_screen_raw_file}")
 			
 			BigBlueButton.logger.debug("Raw dir: #{raw_dir} Target dir: #{target_dir}")
 

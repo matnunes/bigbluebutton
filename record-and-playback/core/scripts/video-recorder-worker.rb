@@ -70,6 +70,12 @@ def record_meeting
         # Kill the remaining process
         $recordings[rec][0].kill
 
+        BigBlueButton.logger.error("Process of meeting #{rec} killed.")
+
+        $recordings[rec][0].wait
+
+        BigBlueButton.logger.error("Waited for process of meeting #{rec}.")
+
         # Remove meeting from hash
         $recordings.delete(rec)
       end
