@@ -43,9 +43,6 @@ require 'absolute_time'
 # https://rubygems.org/gems/background_process
 require 'background_process'
 
-# Background process available at:
-# https://github.com/timcharper/background_process
-# https://rubygems.org/gems/background_process
 require 'background_process'
 
 module BigBlueButton
