@@ -38,8 +38,16 @@ function deploy_format() {
 	done
 }
 
-deploy_format "presentation"
-#deploy_format "presentation_video"
+RECORDING_SERVER=true
+if $RECORDING_SERVER ; then
+    sudo cp mconf/scripts/mconf-god-conf.rb /etc/bigbluebutton/god/conf/
+    sudo cp mconf/scripts/mconf-decrypt.rb /usr/local/bigbluebutton/core/scripts/
+    deploy_format "presentation"
+    deploy_format "presentation_export"
+    deploy_format "presentation_video"
+else
+    deploy_format "mconf"
+fi
 
 sudo mkdir -p /var/bigbluebutton/playback/
 sudo mkdir -p /var/bigbluebutton/recording/raw/
