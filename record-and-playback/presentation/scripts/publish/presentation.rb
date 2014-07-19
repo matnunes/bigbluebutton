@@ -841,8 +841,6 @@ if ($playback == "presentation")
 
 	BigBlueButton.logger.info("Setting recording dir")
 	recording_dir = bbb_props['recording_dir']
-	BigBlueButton.logger.info("Setting published dir")
-	published_dir = bbb_props['published_dir']
 	BigBlueButton.logger.info("Setting process dir")
 	$process_dir = "#{recording_dir}/process/presentation/#{$meeting_id}"
 	BigBlueButton.logger.info("setting publish dir")
@@ -979,19 +977,10 @@ if ($playback == "presentation")
 		FileUtils.cp_r(package_dir, publish_dir) # Copy all the files.
 		BigBlueButton.logger.info("Finished publishing script presentation.rb successfully.")
 
-        BigBlueButton.logger.info("Moving processed audio file.")
-
-		# POST-IT: Changed to not delete .ogg audio file
-		published_audio_dir = "#{published_dir}/presentation/#{$meeting_id}/audio/"
-
-		FileUtils.mkdir "#{published_audio_dir}"
-		FileUtils.mv("#{$process_dir}/audio.ogg", "#{published_audio_dir}")
-
-		BigBlueButton.logger.info("Removing processed files.")
+                BigBlueButton.logger.info("Removing processed files.")
 		FileUtils.rm_r(Dir.glob("#{$process_dir}/*"))
 
 		BigBlueButton.logger.info("Removing published files.")
-		# POST-IT: Changed to not delete .ogg audio file
 		FileUtils.rm_r(Dir.glob("#{target_dir}/*"))
                 rescue  Exception => e
                         BigBlueButton.logger.error(e.message)
