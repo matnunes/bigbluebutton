@@ -23,35 +23,36 @@ require File.expand_path('../../../lib/recordandplayback', __FILE__)
 require 'rubygems'
 require 'trollop'
 require 'yaml'
-require '../lib/recordandplayback/generators/video_recorder'
+require 'pathname'
+require './record/video_recorder'
 
 opts = Trollop::options do
-  opt :meeting_id, "Meeting id to archive", :default => '58f4a6b3-cd07-444d-8564-59116cb53974', :type => String
+  opt :metadata_xml, "Path to the recording metadata.xml", :default => "?", :type => String
   opt :display_id, "Display id to use", :default => '98', :type => String
 end
 
-meeting_id = opts[:meeting_id]
+metadata_xml = opts[:metadata_xml]
+meeting_id = Pathname(metadata_xml).each_filename.to_a[-2]
 display_id = opts[:display_id]
 
 # This script lives in scripts/archive/steps while properties.yaml lives in scripts/
 bbb_props = YAML::load(File.open('../../core/scripts/bigbluebutton.yml'))
 recording_dir = bbb_props['recording_dir']
-raw_dir = bbb_props['raw_presentation_video_src']
 
-target_dir = "#{recording_dir}/process/presentation_video/#{meeting_id}"
-raw_files_dir = "#{raw_dir}/#{meeting_id}/presentation_video"
+target_dir = "#{recording_dir}/process/presentation_recorder/#{meeting_id}"
 
-FileUtils.mkdir_p "/var/log/bigbluebutton/presentation_video"
-logger = Logger.new("/var/log/bigbluebutton/presentation_video/process-#{meeting_id}.log", 'daily' )
-BigBlueButton.logger = logger
+BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_recorder/process-#{meeting_id}.log", 'daily' )
 
-BigBlueButton.logger.info("Trying to record meeting #{meeting_id} at display #{display_id} using presentation_video.rb")
+BigBlueButton.logger.info("Trying to record meeting #{meeting_id} at display #{display_id} using presentation_recorder.rb")
 
 # This recording has never been processed
 if not FileTest.directory?(target_dir)  
 
   video_recorder = BigBlueButton::VideoRecorder.new()
   video_recorder.target_dir = target_dir
-  video_recorder.raw_dir = raw_files_dir
-  video_recorder.record(meeting_id, display_id)
+  begin
+    video_recorder.record(metadata_xml, display_id)
+  rescue Exception => e
+    BigBlueButton.logger.error "Something went wrong on the record method: #{e.to_s}"
+  end
 end

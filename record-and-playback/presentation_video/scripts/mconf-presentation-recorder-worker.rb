@@ -1,3 +1,4 @@
+#!/usr/bin/ruby
 # Set encoding to utf-8
 # encoding: UTF-8
 
@@ -19,101 +20,86 @@
 # with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 #
 
+Dir.chdir(File.expand_path(File.dirname(__FILE__)))
+
 require '../lib/recordandplayback'
 require 'rubygems'
 require 'yaml'
 require 'fileutils'
+require 'pathname'
 
-logger = Logger.new("/var/log/bigbluebutton/video-recorder-worker.log",'daily' )
-logger.level = Logger::ERROR
-BigBlueButton.logger = logger
+BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-video-worker.log",'daily' )
 
-$props = YAML::load(File.open('presentation_video.yml'))
+$props = YAML::load(File.open('mconf-presentation-recorder.yml'))
 $bbb_props = YAML::load(File.open('bigbluebutton.yml'))
 
-# Pool of virtual displays ids
-$virtual_displays = [*$props['display_first_id']..$props['display_last_id']]
+def parent_dir(file)
+  Pathname(file).each_filename.to_a[-2]
+end
 
-# Hash that maintains info of recordings
-# {key = meeting_id, value = [presentation_video background process, display_id]}
-$recordings = {}
+def metadata_to_record_id(metadata)
+  parent_dir(metadata)
+end
 
-# This worker is istantiated only once by God.
+def is_display_free(display_id)
+  command = "xdpyinfo -display :#{display_id}"
+  begin
+    BigBlueButton.execute(command)
+  rescue
+    return true
+  end
+  return false
+end
+
+def get_free_display
+  while true
+    candidate = rand(65536)
+    return candidate if is_display_free(candidate)
+  end
+end
+
+# This worker is instantiated only once by God.
 # record_meeting has an infinite loop that looks for new meetings to record
 def record_meeting
-  #props = YAML::load(File.open('bigbluebutton.yml'))
   published_dir = $bbb_props['published_dir']
   unpublished_dir = $bbb_props['unpublished_dir']
-  presentation_video_dir = $bbb_props['presentation_video']
+  presentation_recorder_dir = $props['presentation_recorder_dir']
+
+  # record_in_progress = {}
+  record_in_progress = Hash[(Dir.entries("/var/bigbluebutton/recording/process/presentation_recorder") - ['.', '..']).map {|v| [v, nil]}]
 
   while true
-    Dir.exists?("#{published_dir}/presentation") ?
-      published_meetings = Dir.entries("#{published_dir}/presentation") - ['.','..'] :
-      published_meetings = ['']
+    published_meetings = Hash[Dir.glob("#{published_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
+    unpublished_meetings = Hash[Dir.glob("#{unpublished_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
+    all_meetings = published_meetings.merge(unpublished_meetings)
+    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
+    recorded_meetings.each { |k| record_in_progress.delete k }
+    meetings_to_record = all_meetings.keys - recorded_meetings - record_in_progress.keys
+    meetings_to_record.sort! {|x,y| x.sub(/.*-/, "") <=> y.sub(/.*-/, "")}
 
-    Dir.exists?("#{unpublished_dir}/presentation") ? 
-      unpublished_meetings = Dir.entries("#{unpublished_dir}/presentation") - ['.','..'] :
-      unpublished_meetings = ['']  
+    BigBlueButton.logger.info "Published meetings:\n#{BigBlueButton.hash_to_str(published_meetings)}"
+    BigBlueButton.logger.info "Unpublished meetings:\n#{BigBlueButton.hash_to_str(unpublished_meetings)}"
+    BigBlueButton.logger.info "All meetings (published + unpublished):\n#{BigBlueButton.hash_to_str(all_meetings)}"
+    BigBlueButton.logger.info "Meetings already recorded:\n#{BigBlueButton.hash_to_str(recorded_meetings)}"
+    BigBlueButton.logger.info "Meetings being recorder right now:\n#{BigBlueButton.hash_to_str(record_in_progress)}"
+    BigBlueButton.logger.info "Meetings to record:\n#{BigBlueButton.hash_to_str(meetings_to_record)}"
 
-    Dir.exists?("#{presentation_video_dir}") ? 
-      recorded_meetings = Dir.entries("#{presentation_video_dir}") - ['.','..'] :
-      recorded_meetings = ['']    
+    if not meetings_to_record.empty?
+      meetings_to_record.each do |record_id|
+        if record_in_progress.count >= 2
+          break
+        end
 
-    # For all completed meetings, see if they are still consuming a display_id from the pool
-    recorded_meetings.each do |rec|
-      if $recordings[rec] != nil
-        BigBlueButton.logger.error("Meeting #{rec} recorded. Pushing display #{$recordings[rec][1]} back to display pool")
-
-        # Get display_id from hash
-        $virtual_displays.push($recordings[rec][1])
-
-        # Kill the remaining process
-        $recordings[rec][0].kill
-
-        BigBlueButton.logger.error("Process of meeting #{rec} killed.")
-
-        $recordings[rec][0].wait
-
-        BigBlueButton.logger.error("Waited for process of meeting #{rec}.")
-
-        # Remove meeting from hash
-        $recordings.delete(rec)
+        # send to presentation_recorder the metadata xml
+        command = "ruby record/presentation_recorder.rb -m #{all_meetings[record_id]} -d #{get_free_display}"
+        record_in_progress[record_id] = BigBlueButton.execute_async(command)
       end
     end
 
-    # Create list of meetings being recorded
-    in_progress = ['']
-    $recordings.each do |met, d_id|
-      in_progress.push(met)
-    end
-
-    meetings_to_record = published_meetings + unpublished_meetings - recorded_meetings - in_progress - ['']
-
-    BigBlueButton.logger.error("Published: #{published_meetings}")
-    BigBlueButton.logger.error("Unpublished: #{unpublished_meetings}")
-    BigBlueButton.logger.error("Recorded: #{recorded_meetings}")
-    BigBlueButton.logger.error("In progress: #{in_progress}")
-    BigBlueButton.logger.error("To record: #{meetings_to_record}")    
-
-    meetings_to_record.each do |mr|
-      # Get a display ID from the pool      
-      display_id = $virtual_displays.pop
-
-      # Starts to record the meeting using presentation_video
-      if (display_id != nil)
-        command = "ruby record/presentation_video.rb -m #{mr} -d #{display_id}"
-        $recordings[mr] = [BigBlueButton.execute_background(command), display_id]
-        BigBlueButton.logger.error("Recording meeting #{mr} at display #{display_id}")
-      else
-        BigBlueButton.logger.error("No free display. Meeting #{mr} will be recorded later.")
-      end      
-    end
-
-    # Sleep a while before searching for new meetings
-    BigBlueButton.execute("sleep 30")
+    sleep 30
   end
 end
 
 record_meeting
 
-BigBlueButton.logger.error("Worker Terminated!")
+BigBlueButton.logger.info("Worker terminated")

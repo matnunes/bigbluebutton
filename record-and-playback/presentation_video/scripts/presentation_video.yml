@@ -1,0 +1,2 @@
+publish_dir: /var/bigbluebutton/published/presentation_video
+playback_dir: /var/bigbluebutton/playback/presentation_video

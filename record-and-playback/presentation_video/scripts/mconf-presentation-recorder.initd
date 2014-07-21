@@ -12,33 +12,34 @@
 NAME=mconf-presentation-recorder
 PID_FILE=/var/run/mconf-presentation-recorder.pid
 DIR=/usr/local/bigbluebutton/core/scripts
-EXEC=mconf-presentation-recorder-worker.rb
+DAEMON=/usr/local/bigbluebutton/core/scripts/mconf-presentation-recorder-daemon.rb
 RUN_AS=tomcat7
 
-if [ ! -f $DIR/$EXEC ]; then
-        echo "$DIR/$EXEC not found."
-        exit
-fi
+test -x $DAEMON || exit 0
+set -e
 
 case "$1" in
   start)
-        echo "Starting $NAME"
-	cd $DIR
-	start-stop-daemon -d $DIR --start --background --pidfile $PID_FILE --chuid $RUN_AS:$RUN_AS --make-pidfile --exec $EXEC --quiet
+        echo -n "Starting $DESC: "
+        start-stop-daemon -d $DIR --start --quiet --pidfile $PID_FILE \
+                --chuid $RUN_AS --exec $DAEMON -- start
+        echo "$NAME."
         ;;
   stop)
-	echo "Stopping $NAME"
-	start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE --exec $EXEC
+        echo -n "Stopping $DESC: "
+        start-stop-daemon -d $DIR --start --quiet --pidfile $PID_FILE \
+                --chuid $RUN_AS --exec $DAEMON -- stop
+        echo "$NAME."
         ;;
-  force-reload|restart)
+  restart)
         $0 stop
         $0 start
         ;;
+      *)
+            N=/etc/init.d/$NAME
+            echo "Usage: $N {start|stop|restart}" >&2
+            exit 1   
+            ;;
+    esac
 
-  *)
-        echo "Use: /etc/init.d/$NAME {start|stop|restart|force-reload}"
-        exit 1
-	;;
-esac
-
-exit 0
+    exit 0
