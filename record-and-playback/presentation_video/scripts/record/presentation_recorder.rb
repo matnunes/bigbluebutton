@@ -41,6 +41,11 @@ recording_dir = bbb_props['recording_dir']
 
 target_dir = "#{recording_dir}/process/presentation_recorder/#{meeting_id}"
 
+log_dir = "/var/log/bigbluebutton/presentation_recorder/"
+if not Dir.exists?(log_dir)
+    FileUtils.mkdir_p log_dir
+end
+
 BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_recorder/process-#{meeting_id}.log", 'daily' )
 
 BigBlueButton.logger.info("Trying to record meeting #{meeting_id} at display #{display_id} using presentation_recorder.rb")

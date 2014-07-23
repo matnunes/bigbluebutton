@@ -65,8 +65,7 @@ def record_meeting
   unpublished_dir = $bbb_props['unpublished_dir']
   presentation_recorder_dir = $props['presentation_recorder_dir']
 
-  # record_in_progress = {}
-  record_in_progress = Hash[(Dir.entries("/var/bigbluebutton/recording/process/presentation_recorder") - ['.', '..']).map {|v| [v, nil]}]
+  record_in_progress = Hash[(Dir.entries("#{presentation_recorder_dir}") - ['.', '..']).map {|v| [v, nil]}]
 
   while true
     published_meetings = Hash[Dir.glob("#{published_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
@@ -101,6 +100,11 @@ def record_meeting
 
     sleep 30
   end
+end
+
+if not Dir.exists?("#{$props['presentation_recorder_dir']}")
+    BigBlueButton.logger.info("Presentation recorder dir #{$props['presentation_recorder_dir']} does not exists")
+    FileUtils.mkdir_p("#{$props['presentation_recorder_dir']}")
 end
 
 record_meeting
