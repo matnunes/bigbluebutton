@@ -59,6 +59,7 @@ module BigBlueButton
 
 			@meeting_id, format, @duration, @link = parse_metadata(metadata_xml)
 			@duration = @duration.to_f / 1000
+			@duration = 30
 
 			if format != "presentation"
 				BigBlueButton.logger.error "This video recorder works with the presentation format only. Format #{format} is invalid."
@@ -87,12 +88,14 @@ module BigBlueButton
 			command = "sleep #{firefox_safemode_wait}"
 			BigBlueButton.execute(command)
 
-			# Click to close the safe mode warning
-			firefox_safemode_button_x = $props['firefox_safemode_button_x']
-			firefox_safemode_button_y = $props['firefox_safemode_button_y']
-			command = "xdotool mousemove #{firefox_safemode_button_x} #{firefox_safemode_button_y}"
-			BigBlueButton.execute(command)
-			command = "xdotool click 1"
+			# Close the safe mode warning
+			#firefox_safemode_button_x = $props['firefox_safemode_button_x']
+			#firefox_safemode_button_y = $props['firefox_safemode_button_y']
+			#command = "xdotool mousemove #{firefox_safemode_button_x} #{firefox_safemode_button_y}"
+			#BigBlueButton.execute(command)
+			#command = "xdotool click 1"
+			#BigBlueButton.execute(command)
+			command = "xdotool key Return"
 			BigBlueButton.execute(command)
 
 			# Click to close the Mozilla Foundation message
@@ -147,6 +150,7 @@ module BigBlueButton
 			BigBlueButton.logger.info "Recording with ffmpeg"
 			ffmpeg_cmd = BigBlueButton::EDL::FFMPEG
 			ffmpeg_cmd += [
+				'-y',
 				'-an',
 				'-t', "#{@duration}",
 				'-f', 'x11grab',
