@@ -125,21 +125,52 @@ module BigBlueButton
     proc
   end
 
+  # http://stackoverflow.com/a/3568291/1006288
+  def self.is_running(proc)
+    begin
+      Process.getpgid( proc.pid )
+      true
+    rescue Errno::ESRCH
+      false
+    end
+  end
+
   def self.kill(proc, signal = "TERM")
-    BigBlueButton.logger.info("Killing PID #{proc.pid} with signal #{signal}")
+    BigBlueButton.logger.info("Killing PID #{proc.pid} with signal #{signal}: #{proc.command}")
+
+    if not is_running(proc)
+      BigBlueButton.logger.info "Trying to kill a process that isn't running, skipping"
+      return
+    end
+
+    proc.stdin.close
+
     begin
       Process.kill signal, proc.pid
     rescue Exception => e
-      BigBlueButton.error "Something went wrong: #{e.to_s}"
-      raise e
+      if e.message == "No such process"
+        BigBlueButton.logger.info "Trying to kill a process that doesn't exist anymore, skipping"
+      else
+        BigBlueButton.logger.error "Something went wrong while killing PID #{proc.pid}: #{e.to_s}"
+        raise e
+      end
     end
   end
 
   def self.wait(proc, timeout_sec=30, fail_on_error=true)
-    BigBlueButton.logger.info("Waiting PID #{proc.pid} to die: #{proc.command}")
+    BigBlueButton.logger.info("Waiting PID #{proc.pid} to die (max. #{timeout_sec} seconds): #{proc.command}")
+
+    if not is_running(proc)
+      BigBlueButton.logger.info "Trying to wait a process that isn't running, skipping"
+      return
+    end
+
     begin
       Timeout::timeout(timeout_sec) {
         pid_returned, status = Process.waitpid2 proc.pid
+
+        BigBlueButton.logger.info("Process status: #{status.to_s}")
+        BigBlueButton.logger.info("Process exited? #{status.exited?}")
 
         out = proc.stdout.readlines
         BigBlueButton.logger.info( "stdout:\n #{Array(out).join()} ") unless out.empty?
@@ -147,8 +178,6 @@ module BigBlueButton
         err = proc.stderr.readlines
         BigBlueButton.logger.error( "stderr:\n #{Array(err).join()} ") unless err.empty?
 
-        BigBlueButton.logger.info("Process status: #{status.to_s}")
-        BigBlueButton.logger.info("Process exited? #{status.exited?}")
         if status.exited?
           BigBlueButton.logger.info("Success?: #{status.success?}")
           BigBlueButton.logger.info("Exit status: #{status.exitstatus}")
@@ -159,10 +188,17 @@ module BigBlueButton
       }
     rescue Timeout::Error
       BigBlueButton.logger.info("PID #{proc.pid} didn't ended in #{timeout_sec} seconds")
+      if is_running(proc)
+        BigBlueButton.logger.error "PID #{proc.pid} is still running, raising an exception"
+        raise
+      else
+        BigBlueButton.logger.info "PID #{proc.pid} is not running anymore, skipping"
+      end
     rescue Exception => e
       if e.message == "No child processes"
         BigBlueButton.logger.info "Trying to wait a process that doesn't exist anymore, skipping"
       else
+        BigBlueButton.logger.error "Something went wrong while waiting for PID #{proc.pid}: #{e.to_s}"
         raise e
       end
     end

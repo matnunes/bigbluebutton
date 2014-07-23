@@ -73,7 +73,10 @@ def record_meeting
     unpublished_meetings = Hash[Dir.glob("#{unpublished_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
     all_meetings = published_meetings.merge(unpublished_meetings)
     recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
-    recorded_meetings.each { |k| record_in_progress.delete k }
+    recorded_meetings.each do |k|
+      BigBlueButton.wait record_in_progress[k] if not record_in_progress[k].nil?
+      record_in_progress.delete k
+    end
     meetings_to_record = all_meetings.keys - recorded_meetings - record_in_progress.keys
     meetings_to_record.sort! {|x,y| x.sub(/.*-/, "") <=> y.sub(/.*-/, "")}
 

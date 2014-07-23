@@ -66,14 +66,11 @@ module BigBlueButton
 			end
 		end
 
-		def do_it
-			recorded_screen_raw_file = "#{@target_dir}/recorded_screen_raw.ogv"
-			BigBlueButton.logger.info("Raw file: #{recorded_screen_raw_file}")
-
-			ENV["DISPLAY"] = ":#{display_id}"
+		def prepare_browser
+			ENV["DISPLAY"] = ":#{@display_id}"
 
 			display_settings = $props['display_settings']
-			command = "Xvfb :#{display_id} -nocursor -screen 0 #{display_settings}"
+			command = "Xvfb :#{@display_id} -nocursor -screen 0 #{display_settings}"
 			@xvfb = BigBlueButton.execute_async(command)
 
 			firefox_home = "/tmp/firefox_presentation_video"
@@ -90,7 +87,12 @@ module BigBlueButton
 			command = "sleep #{firefox_safemode_wait}"
 			BigBlueButton.execute(command)
 
-			command = "xdotool key Return"
+			# Click to close the safe mode warning
+			firefox_safemode_button_x = $props['firefox_safemode_button_x']
+			firefox_safemode_button_y = $props['firefox_safemode_button_y']
+			command = "xdotool mousemove #{firefox_safemode_button_x} #{firefox_safemode_button_y}"
+			BigBlueButton.execute(command)
+			command = "xdotool click 1"
 			BigBlueButton.execute(command)
 
 			# Click to close the Mozilla Foundation message
@@ -101,6 +103,7 @@ module BigBlueButton
 			command = "xdotool click 1"
 			BigBlueButton.execute(command)
 
+			# Wait presentation to load
 			firefox_load_wait = $props['firefox_load_wait']
 			command = "sleep #{firefox_load_wait}"
 			BigBlueButton.execute(command)
@@ -112,25 +115,67 @@ module BigBlueButton
 			BigBlueButton.execute(command)
 			command = "xdotool click 1"
 			BigBlueButton.execute(command)
+		end
+
+		def wait_recording
+			BigBlueButton.logger.info "Waiting #{@duration} seconds until the end of the recording"
+			sleep @duration
+		end
+
+		def record_with_recordmydesktop(width, height, x, y, output)
+			BigBlueButton.logger.info "Recording with recordmydesktop"
+			command = "recordmydesktop --overwrite --on-the-fly-encoding --no-cursor --no-sound --fps 30 --width #{width} --height #{height} -x #{x} -y #{y} -o #{output}"
+			@recordmydesktop = BigBlueButton.execute_async(command)
+
+			self.wait_recording
+
+			BigBlueButton.kill(@recordmydesktop)
+			BigBlueButton.wait(@recordmydesktop, @duration)
+
+			session_dir = "/tmp/rMD-session-#{@display_id}"
+			if BigBlueButton.dir_exists? session_dir
+				command = "recordmydesktop --overwrite --rescue #{session_dir}"
+				BigBlueButton.execute command
+				FileUtils.rm_r session_dir
+			else
+				# probably the file got recorded properly
+			end
+			@recordmydesktop = nil
+		end
+
+		def record_with_ffmpeg(width, height, x, y, output)
+			BigBlueButton.logger.info "Recording with ffmpeg"
+			command = "ffmpeg -y -an -f x11grab -r 30 -s #{width}x#{height} -i :#{@display_id}.0+#{x},#{y} -vcodec libvpx #{output}"
+			@recordmydesktop = BigBlueButton.execute_async(command)
+
+			self.wait_recording
+
+			@recordmydesktop.stdin.puts "q"
+			@recordmydesktop.stdin.close
+			BigBlueButton.wait(@recordmydesktop, @duration)
+			@recordmydesktop = nil
+		end
+
+		def record_screen
+			recorded_screen_raw_file = "#{@target_dir}/recorded_screen_raw.webm"
+			BigBlueButton.logger.info("Raw file: #{recorded_screen_raw_file}")
 
 			record_window_width = $props['record_window_width']
 			record_window_height = $props['record_window_height']
 			record_window_x_offset = $props['record_window_x_offset']
 			record_window_y_offset = $props['record_window_y_offset']
-			command = "recordmydesktop --full-shots --no-cursor --no-sound --width #{record_window_width} --height #{record_window_height} -x #{record_window_x_offset} -y #{record_window_y_offset} -o #{recorded_screen_raw_file}"
-			@recordmydesktop = BigBlueButton.execute_async(command)
+			# record_with_recordmydesktop(record_window_width, record_window_height, record_window_x_offset, record_window_y_offset, recorded_screen_raw_file)
+			record_with_ffmpeg(record_window_width, record_window_height, record_window_x_offset, record_window_y_offset, recorded_screen_raw_file)
 		end
 
 		def tear_down
-			BigBlueButton.kill(@recordmydesktop)
-			BigBlueButton.kill(@firefox, "KILL")
-
-			# use a large wait timeout to be able to archive the entire recording
-			BigBlueButton.wait(@recordmydesktop, @duration * 2)
+			BigBlueButton.kill(@firefox)
 			BigBlueButton.wait(@firefox, 10)
+			@firefox = nil
 
 			BigBlueButton.kill(@xvfb)
 			BigBlueButton.wait(@xvfb)
+			@xvfb = nil
 		end
 
 		# This converts a playback meeting and outputs a out.avi file at bigbluebutton/published/#{meeting_id}
@@ -141,15 +186,10 @@ module BigBlueButton
 			@display_id = display_id
 
 			begin
-				self.set_up
-
 				BigBlueButton.logger.info("Preparing to record meeting #{@meeting_id}.")
-
-				self.do_it
-
-				command = "sleep #{@duration}"
-				BigBlueButton.execute(command)
-
+				self.set_up
+				self.prepare_browser
+				self.record_screen
 				self.tear_down
 
 				recording_dir = $bbb_props['recording_dir']
