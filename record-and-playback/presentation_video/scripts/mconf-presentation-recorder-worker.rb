@@ -88,7 +88,7 @@ def record_meeting
 
     if not meetings_to_record.empty?
       meetings_to_record.each do |record_id|
-        if record_in_progress.count >= 2
+        if record_in_progress.count >= $props['simultaneous_meetings']
           break
         end
 
