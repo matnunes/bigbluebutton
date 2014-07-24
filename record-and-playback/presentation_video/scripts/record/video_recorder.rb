@@ -59,7 +59,6 @@ module BigBlueButton
 
 			@meeting_id, format, @duration, @link = parse_metadata(metadata_xml)
 			@duration = @duration.to_f / 1000
-			@duration = 30
 
 			if format != "presentation"
 				BigBlueButton.logger.error "This video recorder works with the presentation format only. Format #{format} is invalid."
