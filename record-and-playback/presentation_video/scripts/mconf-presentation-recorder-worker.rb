@@ -71,20 +71,32 @@ def record_meeting
     published_meetings = Hash[Dir.glob("#{published_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
     unpublished_meetings = Hash[Dir.glob("#{unpublished_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
     all_meetings = published_meetings.merge(unpublished_meetings)
-    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
+    
+    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}    
     recorded_meetings.each do |k|
       BigBlueButton.wait record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k
     end
+
+    error_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.error").map {|v| File.basename(v).sub(/-presentation_recorder.error/, '')}
+    error_meetings.each do |k|
+      BigBlueButton.kill record_in_progress[k] if not record_in_progress[k].nil?
+      record_in_progress.delete k
+      error_file = "/var/bigbluebutton/recording/status/processed/#{k}-presentation_recorder.error"
+      BigBlueButton.logger.info "Error file #{error_file}"
+      FileUtils.rm error_file
+    end
+
     meetings_to_record = all_meetings.keys - recorded_meetings - record_in_progress.keys
     meetings_to_record.sort! {|x,y| x.sub(/.*-/, "") <=> y.sub(/.*-/, "")}
 
-    BigBlueButton.logger.info "Published meetings:\n#{BigBlueButton.hash_to_str(published_meetings)}"
-    BigBlueButton.logger.info "Unpublished meetings:\n#{BigBlueButton.hash_to_str(unpublished_meetings)}"
+    #BigBlueButton.logger.info "Published meetings:\n#{BigBlueButton.hash_to_str(published_meetings)}"
+    #BigBlueButton.logger.info "Unpublished meetings:\n#{BigBlueButton.hash_to_str(unpublished_meetings)}"
     BigBlueButton.logger.info "All meetings (published + unpublished):\n#{BigBlueButton.hash_to_str(all_meetings)}"
     BigBlueButton.logger.info "Meetings already recorded:\n#{BigBlueButton.hash_to_str(recorded_meetings)}"
     BigBlueButton.logger.info "Meetings being recorder right now:\n#{BigBlueButton.hash_to_str(record_in_progress)}"
     BigBlueButton.logger.info "Meetings to record:\n#{BigBlueButton.hash_to_str(meetings_to_record)}"
+    BigBlueButton.logger.info "Meetings with error: \n#{BigBlueButton.hash_to_str(error_meetings)}"
 
     if not meetings_to_record.empty?
       meetings_to_record.each do |record_id|

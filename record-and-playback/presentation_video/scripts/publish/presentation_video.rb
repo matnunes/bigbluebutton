@@ -58,7 +58,7 @@ if ($playback == "presentation_video")
   raw_archive_dir = "#{recording_dir}/raw/#{$meeting_id}"
 
   if not FileTest.directory?(target_dir)
-    BigBlueButton.logger.info("Making dir target_dir")
+    BigBlueButton.logger.info("Making dir #{target_dir}")
     FileUtils.mkdir_p target_dir
 
     metadata_xml = "#{process_dir}/metadata.xml"
@@ -76,7 +76,7 @@ if ($playback == "presentation_video")
     doc.at("link").content = "http://#{playback_host}/presentation_video/#{$meeting_id}/video.webm"
 
     package_dir = "#{target_dir}/#{$meeting_id}"
-    BigBlueButton.logger.info("Making dir package_dir")
+    BigBlueButton.logger.info("Making dir #{package_dir}")
     FileUtils.mkdir_p package_dir
 
     BigBlueButton.logger.info("Creating metadata.xml")

@@ -59,5 +59,11 @@ if not FileTest.directory?(target_dir)
     video_recorder.record(metadata_xml, display_id)
   rescue Exception => e
     BigBlueButton.logger.error "Something went wrong on the record method: #{e.to_s}"
+
+    BigBlueButton.logger.error "Creating error file for meeting #{meeting_id}"
+    recording_dir = $bbb_props['recording_dir']
+	process_error = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.error", "w")
+	process_error.write("Error processing #{meeting_id}")
+	process_error.close
   end
 end
