@@ -88,12 +88,6 @@ module BigBlueButton
 			BigBlueButton.execute(command)
 
 			# Close the safe mode warning
-			#firefox_safemode_button_x = $props['firefox_safemode_button_x']
-			#firefox_safemode_button_y = $props['firefox_safemode_button_y']
-			#command = "xdotool mousemove #{firefox_safemode_button_x} #{firefox_safemode_button_y}"
-			#BigBlueButton.execute(command)
-			#command = "xdotool click 1"
-			#BigBlueButton.execute(command)
 			command = "xdotool key Return"
 			BigBlueButton.execute(command)
 

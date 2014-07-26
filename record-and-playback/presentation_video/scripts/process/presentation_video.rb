@@ -109,7 +109,7 @@ if not FileTest.directory?(target_dir)
     BigBlueButton.execute command
 
     # FileUtils.rm recorder_done
-    # FileUtils.rm_r(Dir.glob("#{presentation_recorder_dir}/*"))
+    FileUtils.rm_r(Dir.glob("#{presentation_recorder_dir}/*"))
 
     process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
     process_done.write("Processed #{meeting_id}")
