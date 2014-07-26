@@ -28,7 +28,7 @@ require 'yaml'
 require 'fileutils'
 require 'pathname'
 
-BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-video-worker.log",'daily' )
+BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-recorder-worker.log",'daily' )
 
 $props = YAML::load(File.open('mconf-presentation-recorder.yml'))
 $bbb_props = YAML::load(File.open('bigbluebutton.yml'))

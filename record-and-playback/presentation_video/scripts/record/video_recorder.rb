@@ -145,15 +145,19 @@ module BigBlueButton
 
 		def record_with_ffmpeg(width, height, x, y, output)
 			BigBlueButton.logger.info "Recording with ffmpeg"
-			command = "ffmpeg -y -an -f x11grab -r 30 -s #{width}x#{height} -i :#{@display_id}.0+#{x},#{y} -vcodec libvpx #{output}"
-			@recordmydesktop = BigBlueButton.execute_async(command)
-
-			self.wait_recording
-
-			@recordmydesktop.stdin.puts "q"
-			@recordmydesktop.stdin.close
-			BigBlueButton.wait(@recordmydesktop, @duration)
-			@recordmydesktop = nil
+			ffmpeg_cmd = BigBlueButton::EDL::FFMPEG
+			ffmpeg_cmd += [
+				'-an',
+				'-t', "#{@duration}",
+				'-f', 'x11grab',
+				'-s', "#{width}x#{height}",
+				'-i', ":#{@display_id}.0+#{x},#{y}",
+				'-c:v', 'libvpx',
+				'-qmin', '0', '-qmax', '50',
+				'-crf', '5', '-b:v', '1M',
+				"#{output}"
+			]
+			BigBlueButton.exec_ret(*ffmpeg_cmd)
 		end
 
 		def record_screen
@@ -169,8 +173,8 @@ module BigBlueButton
 		end
 
 		def tear_down
+			Process.detach @firefox.pid
 			BigBlueButton.kill(@firefox)
-			BigBlueButton.wait(@firefox, 10)
 			@firefox = nil
 
 			BigBlueButton.kill(@xvfb)
@@ -197,7 +201,12 @@ module BigBlueButton
 				process_done.write("Processed #{@meeting_id}")
 				process_done.close
 			rescue Exception => e
-				BigBlueButton.logger.error "Exception ocurred during video record: #{e.to_s}"
+				BigBlueButton.logger.error "Exception ocurred during video record: #{e.message}"
+
+				e.backtrace.each do |traceline|
+					BigBlueButton.logger.error(traceline)
+				end
+
 				BigBlueButton.kill(@recordmydesktop, "KILL") if not @recordmydesktop.nil?
 				BigBlueButton.kill(@firefox, "KILL") if not @firefox.nil?
 				BigBlueButton.kill(@xvfb, "KILL") if not @xvfb.nil?

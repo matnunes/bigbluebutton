@@ -126,7 +126,7 @@ module BigBlueButton
   end
 
   # http://stackoverflow.com/a/3568291/1006288
-  def self.is_running(proc)
+  def self.is_running?(proc)
     begin
       Process.getpgid( proc.pid )
       true
@@ -138,12 +138,12 @@ module BigBlueButton
   def self.kill(proc, signal = "TERM")
     BigBlueButton.logger.info("Killing PID #{proc.pid} with signal #{signal}: #{proc.command}")
 
-    if not is_running(proc)
+    if not is_running?(proc)
       BigBlueButton.logger.info "Trying to kill a process that isn't running, skipping"
       return
     end
 
-    proc.stdin.close
+    proc.stdin.close unless proc.stdin.closed?
 
     begin
       Process.kill signal, proc.pid
@@ -160,7 +160,7 @@ module BigBlueButton
   def self.wait(proc, timeout_sec=30, fail_on_error=true)
     BigBlueButton.logger.info("Waiting PID #{proc.pid} to die (max. #{timeout_sec} seconds): #{proc.command}")
 
-    if not is_running(proc)
+    if not is_running?(proc)
       BigBlueButton.logger.info "Trying to wait a process that isn't running, skipping"
       return
     end
@@ -188,7 +188,7 @@ module BigBlueButton
       }
     rescue Timeout::Error
       BigBlueButton.logger.info("PID #{proc.pid} didn't ended in #{timeout_sec} seconds")
-      if is_running(proc)
+      if is_running?(proc)
         BigBlueButton.logger.error "PID #{proc.pid} is still running, raising an exception"
         raise
       else

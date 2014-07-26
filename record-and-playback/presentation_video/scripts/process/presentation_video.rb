@@ -58,7 +58,7 @@ if not FileTest.directory?(target_dir)
     BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_video/process-#{meeting_id}.log", 'daily' )
 
     presentation_recorder_dir = "#{recording_dir}/process/presentation_recorder/#{meeting_id}"
-    recorded_screen_raw_file = "#{presentation_recorder_dir}/recorded_screen_raw.ogv"
+    recorded_screen_raw_file = "#{presentation_recorder_dir}/recorded_screen_raw.webm"
 
     FileUtils.cp_r "#{presentation_recorder_dir}/metadata.xml", "#{target_dir}/metadata.xml"
     FileUtils.cp_r "#{recorded_screen_raw_file}", "#{target_dir}/"
@@ -101,11 +101,15 @@ if not FileTest.directory?(target_dir)
       ]
     }
 
+    video_before_mkclean = "#{target_dir}/before_mkclean"
     converted_video_file = "#{target_dir}/video"
-    BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, converted_video_file, 0)
+    BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, video_before_mkclean, 0)
 
-    FileUtils.rm recorder_done
-    FileUtils.rm_r(Dir.glob("#{presentation_recorder_dir}/*"))
+    command = "mkclean #{video_before_mkclean}.#{format[:extension]} #{converted_video_file}.#{format[:extension]}"
+    BigBlueButton.execute command
+
+    # FileUtils.rm recorder_done
+    # FileUtils.rm_r(Dir.glob("#{presentation_recorder_dir}/*"))
 
     process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
     process_done.write("Processed #{meeting_id}")

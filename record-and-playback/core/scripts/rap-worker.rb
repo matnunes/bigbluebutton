@@ -179,6 +179,23 @@ def process_archived_meeting(recording_dir)
   end
 end
 
+def done_to_meeting_id(path)
+	match = /(.*-.*)-(.*).done/.match path.sub(/.+\//, "")
+	return match[1]
+end
+
+def process_recorded_video_meeting(recording_dir)
+	to_process = Dir.glob("#{recording_dir}/status/processed/*-presentation_recorder.done").map {|v| done_to_meeting_id(v)}
+	processed = Dir.glob("#{recording_dir}/status/processed/*-presentation_video.done").map {|v| done_to_meeting_id(v)}
+
+	to_process.each do |meeting_id|
+		if not processed.include? meeting_id
+			command = "ruby process/presentation_video.rb -m #{meeting_id}"
+			BigBlueButton.execute command
+		end
+	end
+end
+
 def publish_processed_meeting(recording_dir)
   processed_done_files = Dir.glob("#{recording_dir}/status/processed/*.done")
 
@@ -362,3 +379,11 @@ rescue Exception => e
     BigBlueButton.logger.error(traceline)
   end
 end	
+
+props = YAML::load(File.open('bigbluebutton.yml'))
+recording_dir = props['recording_dir']
+archive_recorded_meeting(recording_dir)
+sanity_archived_meeting(recording_dir)
+process_archived_meeting(recording_dir)
+process_recorded_video_meeting(recording_dir)
+publish_processed_meeting(recording_dir)

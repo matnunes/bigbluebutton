@@ -71,38 +71,18 @@ if ($playback == "presentation_video")
       raise e
     end
 
-    start_time = doc.xpath('//recording/start_time').text
-    end_time = doc.xpath('//recording/end_time').text
-    metadata = {}
-    doc.xpath('//recording/meta/*').each do |meta|
-      BigBlueButton.logger.info "Adding meta (#{meta.to_s}) tag #{meta.name} value #{meta.text}"
-      metadata[meta.name] = meta.text
-    end
+    doc.at("published").content = true;
+    doc.at("format").content = "presentation_video"
+    doc.at("link").content = "http://#{playback_host}/presentation_video/#{$meeting_id}/video.webm"
 
     package_dir = "#{target_dir}/#{$meeting_id}"
     BigBlueButton.logger.info("Making dir package_dir")
     FileUtils.mkdir_p package_dir
 
     BigBlueButton.logger.info("Creating metadata.xml")
-    # Create metadata.xml
-    b = Builder::XmlMarkup.new(:indent => 2)
-
-    metaxml = b.recording {
-      b.id($meeting_id)
-      b.state("available")
-      b.published(true)
-      b.start_time(start_time)
-      b.end_time(end_time)
-      b.playback {
-        b.format("presentation_video")
-        b.link("http://#{playback_host}/presentation_video/#{$meeting_id}/video.webm")
-      }
-      b.meta {
-        metadata.each { |k,v| b.method_missing(k,v) }
-      }
-    }
+    
     metadata_xml = File.new("#{package_dir}/metadata.xml","w")
-    metadata_xml.write(metaxml)
+    metadata_xml.write(doc.to_xml(:indent => 2))
     metadata_xml.close
 
     FileUtils.cp_r("#{process_dir}/video.webm", "#{package_dir}/")
