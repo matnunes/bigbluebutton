@@ -60,6 +60,8 @@ module BigBlueButton
 			@meeting_id, format, @duration, @link = parse_metadata(metadata_xml)
 			@duration = @duration.to_f / 1000
 
+			BigBlueButton.logger.info("Recording of meeting #{@meeting_id} set up.")
+
 			if format != "presentation"
 				BigBlueButton.logger.error "This video recorder works with the presentation format only. Format #{format} is invalid."
 				raise "InvalidFormat"
@@ -176,6 +178,17 @@ module BigBlueButton
 			@xvfb = nil
 		end
 
+		def force_kill(proc)
+				if not proc.nil?
+						begin
+								BigBlueButton.logger.info "Killing PID #{proc.pid}"
+								BigBlueButton.kill(proc, "KILL")
+						rescue Exception => e
+								BigBlueButton.logger.error "Error while killing PID #{proc.pid}"
+						end
+				end
+		end
+
 		# This converts a playback meeting and outputs a out.avi file at bigbluebutton/published/#{meeting_id}
 		#
 		#   meeting_id - meeting id of video to be converted
@@ -184,7 +197,6 @@ module BigBlueButton
 			@display_id = display_id
 
 			begin
-				BigBlueButton.logger.info("Preparing to record meeting #{@meeting_id}.")
 				self.set_up
 				self.prepare_browser
 				self.record_screen
@@ -201,9 +213,9 @@ module BigBlueButton
 					BigBlueButton.logger.error(traceline)
 				end
 
-				BigBlueButton.kill(@recordmydesktop, "KILL") if not @recordmydesktop.nil?
-				BigBlueButton.kill(@firefox, "KILL") if not @firefox.nil?
-				BigBlueButton.kill(@xvfb, "KILL") if not @xvfb.nil?
+				self.force_kill(@recordmydesktop)
+				self.force_kill(@firefox)
+				self.force_kill(@xvfb)
 
 				FileUtils.rm_rf @target_dir
 
