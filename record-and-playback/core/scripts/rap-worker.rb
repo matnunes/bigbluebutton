@@ -21,6 +21,10 @@
 # to /usr/local/bin. Add that to the path.
 ENV['PATH'] += ':/usr/local/bin'
 
+# Monit reduces the path, but we require tools that are often manually installed
+# to /usr/local/bin. Add that to the path.
+ENV['PATH'] += ':/usr/local/bin'
+
 require '../lib/recordandplayback'
 require 'rubygems'
 require 'yaml'
