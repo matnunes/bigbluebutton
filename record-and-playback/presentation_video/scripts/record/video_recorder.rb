@@ -84,16 +84,14 @@ module BigBlueButton
 			@firefox = BigBlueButton.execute_async(command)
 
 			firefox_safemode_wait = $props['firefox_safemode_wait']
-			command = "sleep #{firefox_safemode_wait}"
-			BigBlueButton.execute(command)
+			sleep firefox_safemode_wait
 
 			# Close the safe mode warning
 			command = "xdotool key Return"
 			BigBlueButton.execute(command)
 
 			# Click to close the Mozilla Foundation message
-			command = "sleep #{firefox_safemode_wait}"
-			BigBlueButton.execute(command)
+			sleep firefox_safemode_wait
 			command = "xdotool mousemove #{firefox_width - 14} 100"
 			BigBlueButton.execute(command)
 			command = "xdotool click 1"
@@ -101,8 +99,7 @@ module BigBlueButton
 
 			# Wait presentation to load
 			firefox_load_wait = $props['firefox_load_wait']
-			command = "sleep #{firefox_load_wait}"
-			BigBlueButton.execute(command)
+			sleep firefox_load_wait
 
 			# Move mouse to start playing the video
 			play_button_x_position = $props['play_button_x_position']
