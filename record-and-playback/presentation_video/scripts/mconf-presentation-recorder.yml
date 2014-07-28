@@ -17,12 +17,12 @@ firefox_height: 900
 firefox_safemode_wait: 5
 firefox_load_wait: 15
 xvfb_wait: 10
-play_button_x_position: 283
-play_button_y_position: 740
+play_button_x_position: 292
+play_button_y_position: 727
 
-record_window_width: 1212
-record_window_height: 588
-record_window_x_offset: 256
-record_window_y_offset: 128
+record_window_width: 1222
+record_window_height: 604
+record_window_x_offset: 258
+record_window_y_offset: 105
 
 simultaneous_meetings: 2
