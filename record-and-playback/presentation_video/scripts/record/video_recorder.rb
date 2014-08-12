@@ -42,6 +42,12 @@ module BigBlueButton
 			duration = doc.xpath('//recording/playback/duration').text
 			link = doc.xpath('//recording/playback/link').text
 
+			if duration == ''
+				BigBlueButton.logger.info "No duration field at metadata.xml. Using meeting start and end times"
+				time_dif = doc.xpath('//recording/end_time').text.to_i - doc.xpath('//recording/start_time').text.to_i
+				duration = "#{time_dif}"
+			end			
+
 			BigBlueButton.logger.info "record_id: #{record_id}"
 			BigBlueButton.logger.info "format   : #{format}"
 			BigBlueButton.logger.info "duration : #{duration}"

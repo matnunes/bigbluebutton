@@ -48,21 +48,33 @@ end
 
 BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_recorder/process-#{meeting_id}.log", 'daily' )
 
-BigBlueButton.logger.info("Trying to record meeting #{meeting_id} at display #{display_id} using presentation_recorder.rb")
-
 # This recording has never been processed
 if not FileTest.directory?(target_dir)  
+
+  BigBlueButton.logger.info("Trying to record meeting #{meeting_id} at display #{display_id} using presentation_recorder.rb")
 
   video_recorder = BigBlueButton::VideoRecorder.new()
   video_recorder.target_dir = target_dir
   begin
     video_recorder.record(metadata_xml, display_id)
   rescue Exception => e
+    #if e.to_s == "Invalid meeting duration"
+    #  BigBlueButton.logger.error "Invalid meeting duration while parsing metadata.xml: #{e.to_s}"
+    #  
+    #  BigBlueButton.logger.error "Creating done file for meeting #{meeting_id} in order to avoid reprocessing the meeting"
+    #  process_error = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.done", "w")
+    #  process_error.write("Problems while retrieving duration of metadata.xml of meeting #{meeting_id}")
+    #  process_error.close
+
+    #  BigBlueButton.logger.error "Creating #{recording_dir}/process/presentation_video/#{meeting_id} folder. This avoids presentation_video to process this meeting"
+    #  FileUtils.mkdir_p "#{recording_dir}/process/presentation_video/#{meeting_id}"
+    #else
     BigBlueButton.logger.error "Something went wrong on the record method: #{e.to_s}"
 
     BigBlueButton.logger.error "Creating error file for meeting #{meeting_id}"
     process_error = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.error", "w")
     process_error.write("Error processing #{meeting_id}")
     process_error.close
+    #end
   end
 end

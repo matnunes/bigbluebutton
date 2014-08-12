@@ -41,13 +41,13 @@ presentation_unpublished_dir = props['presentation_unpublished_dir']
 playback_dir = props['playback_dir']
 
 target_dir = "#{recording_dir}/process/presentation_video/#{meeting_id}"
-BigBlueButton.logger.debug "Testing if #{target_dir} exists"
+BigBlueButton.logger.info "Testing if #{target_dir} exists"
 
 if not FileTest.directory?(target_dir)
   # this recording has never been processed
 
   recorder_done = "#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.done"
-  BigBlueButton.logger.debug "Testing if #{recorder_done} exists"
+  BigBlueButton.logger.info "Testing if #{recorder_done} exists"
 
   if File.exists?(recorder_done)
     # the video was recorded, now it's time to prepare everything
@@ -73,7 +73,7 @@ if not FileTest.directory?(target_dir)
       raise e
     end
 
-    duration = doc.xpath('//recording/playback/duration').text
+    #duration = doc.xpath('//recording/playback/duration').text
     link = doc.xpath('//recording/playback/link').text
     uri = URI.parse(link)
     file_repo = "#{uri.scheme}://#{uri.host}/presentation/#{meeting_id}"
@@ -105,14 +105,19 @@ if not FileTest.directory?(target_dir)
     converted_video_file = "#{target_dir}/video"
     BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, video_before_mkclean, 0)
 
-    command = "mkclean #{video_before_mkclean}.#{format[:extension]} #{converted_video_file}.#{format[:extension]}"
+    command = "mkclean --quiet #{video_before_mkclean}.#{format[:extension]} #{converted_video_file}.#{format[:extension]}"
+    BigBlueButton.logger.info command
     BigBlueButton.execute command
 
+    BigBlueButton.logger.info "Mkclean done"
+
+    #BigBlueButton.logger.info "Deleting #{presentation_recorder_dir}/*"
+
     # FileUtils.rm recorder_done
-    FileUtils.rm_r(Dir.glob("#{presentation_recorder_dir}/*"))
+    #FileUtils.rm_r(Dir.glob("#{presentation_recorder_dir}/*"))
 
     process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
     process_done.write("Processed #{meeting_id}")
-    process_done.close
+    process_done.close  
   end
 end
