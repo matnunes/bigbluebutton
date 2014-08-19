@@ -1,10 +1,11 @@
 require '../../core/lib/recordandplayback'
+require '../../core/lib/recordandplayback/generators/video'
 require 'yaml'
 require 'open-uri'
+require 'uri'
 
 module BigBlueButton
 
-	# All necessary bash commands to output a video
 	class VideoRecorder
 
 		# Load yaml file with recording properties
@@ -43,14 +44,38 @@ module BigBlueButton
 			link = doc.xpath('//recording/playback/link').text
 
 			if duration == ''
-				BigBlueButton.logger.info "No duration field at metadata.xml. Using meeting start and end times"
-				time_dif = doc.xpath('//recording/end_time').text.to_i - doc.xpath('//recording/start_time').text.to_i
-				duration = "#{time_dif}"
+				BigBlueButton.logger.info "No duration field at metadata.xml. Will extract video time from audio.webm or webcams.webm"
+
+				uri = URI.parse(link)
+			    file_repo = "#{uri.scheme}://#{uri.host}/presentation/#{record_id}"
+
+				BigBlueButton.try_download "#{file_repo}/video/webcams.webm", "#{@target_dir}/webcams.webm"
+			    BigBlueButton.try_download "#{file_repo}/audio/audio.webm", "#{@target_dir}/audio.webm"
+
+			    audio_file = nil
+			    if File.exist?("#{@target_dir}/webcams.webm")
+			      audio_file = "#{@target_dir}/webcams.webm"
+			    elsif File.exist?("#{@target_dir}/audio.webm")
+			      audio_file = "#{@target_dir}/audio.webm"
+			    else
+			      BigBlueButton.logger.error "Couldn't locate an audio file on published presentation"
+			      raise "NoAudioFile"
+			    end	
+
+			    BigBlueButton.logger.info "Will extract audio lenght from #{audio_file}"
+			    FFMPEG.ffmpeg_binary = "/usr/local/bin/ffmpeg"
+			    BigBlueButton.logger.info "Setting FFMPEG path to #{FFMPEG.ffmpeg_binary}"
+			    # Must transform to ms
+			    duration = "#{BigBlueButton.get_video_duration(audio_file)}".to_f * 1000
+			    BigBlueButton.logger.info "Extracted duration: #{duration}"
+
+			    BigBlueButton.logger.info "Deleting #{audio_file}"
+			    FileUtils.rm_rf audio_file			    
 			end			
 
 			BigBlueButton.logger.info "record_id: #{record_id}"
 			BigBlueButton.logger.info "format   : #{format}"
-			BigBlueButton.logger.info "duration : #{duration}"
+			BigBlueButton.logger.info "duration : #{duration} ms"
 			BigBlueButton.logger.info "link     : #{link}"
 
 			return record_id, format, duration, link
