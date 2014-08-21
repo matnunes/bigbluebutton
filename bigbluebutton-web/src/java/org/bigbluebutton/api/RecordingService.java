@@ -32,6 +32,7 @@ public class RecordingService {
 	
 	private String publishedDir = "/var/bigbluebutton/published";
 	private String unpublishedDir = "/var/bigbluebutton/unpublished";
+	private String presentationVideoDir = "/var/bigbluebutton/presentation_video";
 	private RecordingServiceHelper recordingServiceHelper;
 	private String recordStatusDir;
 	
@@ -52,6 +53,35 @@ public class RecordingService {
 		}
 	}
 	
+	public void startPresentationVideo(String meetingId) {
+		String done = presentationVideoDir + "/" + meetingId + ".done";
+
+		File doneFile = new File(done);
+		if (!doneFile.exists()) {
+			try {
+				doneFile.createNewFile();
+				if (!doneFile.exists()) {
+					log.error("Failed to create " + done + " file.");
+				}
+				log.debug("File " + done + " created!");
+			} catch (IOException e) {
+				log.error("Failed to create " + done + " file.");
+			}
+		} else {
+			log.error(done + " file already exists.");
+		}		
+	}
+
+	public boolean existPresentationVideo(String meetingId) {
+		String done = presentationVideoDir + "/" + meetingId + ".done";
+
+		File doneFile = new File(done);
+		if (doneFile.exists())
+			return true;
+		else
+			return false;
+	}
+
 	public ArrayList<Recording> getRecordings(ArrayList<String> meetingIds) {
 		ArrayList<Recording> recs = new ArrayList<Recording>();
 		

@@ -308,6 +308,21 @@ public class MeetingService implements MessageListener {
 		return messagingService.listSubscriptions(meetingId);
 	}
 
+	public void generatePresentationVideo(Meeting m) {
+		log.debug("Generating presentation video for meeting with external id: " + m.getExternalId());
+
+		if (existPresentationVideo(m)){
+			log.debug("Presentation video already started or existent for meeting " + m.getExternalId());
+		} else {
+			log.debug("Presentation video not started nor existent for meeting " + m.getExternalId());
+			recordingService.startPresentationVideo(m.getExternalId());
+		}		
+	}
+
+	public boolean existPresentationVideo(Meeting m) {
+		return recordingService.existPresentationVideo(m.getExternalId());
+	}
+
 	public Meeting getMeeting(String meetingId) {
 		if (meetingId == null)
 			return null;
@@ -417,7 +432,7 @@ public class MeetingService implements MessageListener {
 	public void processRecording(String meetingId) {
 		log.debug("Process recording for [{}]", meetingId);
 		recordingService.startIngestAndProcessing(meetingId);
-	}
+	}	
 		
 	public boolean isMeetingWithVoiceBridgeExist(String voiceBridge) {
 /*		Collection<Meeting> confs = meetings.values();

@@ -35,6 +35,10 @@ public class ApiErrors {
 	public void nonUniqueMeetingIdError() {
 		errors.add(new String[] {"NotUniqueMeetingID", "A meeting already exists with that meeting ID.  Please use a different meeting ID."});
 	}
+
+	public void meetingIdProcessedError() {
+		errors.add(new String[] {"meetingIdProcessed", "The meeting with that meeting ID was already processed."});
+	}
 	
 	public void invalidMeetingIdError() {
 		errors.add(new String[] {"invalidMeetingId", "The meeting ID that you supplied did not match any existing meetings"});
