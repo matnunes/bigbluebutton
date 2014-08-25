@@ -77,6 +77,22 @@ class ApiController {
     }
   }
 
+  def testFunc = {
+    String API_CALL = 'testFunc'
+    log.debug CONTROLLER_NAME + "#${API_CALL}"
+    log.debug params
+
+    withFormat {  
+      xml {
+        render(contentType:"text/xml") {
+          response() {
+            returncode(RESP_CODE_SUCCESS)
+          }
+        }
+      }
+    }
+  }
+
   /*********************************** 
    * GENERATE_PRESENTATION_VIDEO (API) 
    ***********************************/
@@ -85,25 +101,25 @@ class ApiController {
     log.debug CONTROLLER_NAME + "#${API_CALL}"
     log.debug params
     
-  // BEGIN - backward compatibility
-  if (StringUtils.isEmpty(params.checksum)) {
-    invalid("checksumError", "You did not pass the checksum security check")
-    return
-  }
+    // BEGIN - backward compatibility
+    if (StringUtils.isEmpty(params.checksum)) {
+      invalid("checksumError", "You did not pass the checksum security check")
+      return
+    }
 
-  if (StringUtils.isEmpty(params.meetingID)) {
-    invalid("missingParamMeetingID", "You must specify a meeting ID for the meeting.");
-    return
-  }
-  
-  if (! paramsProcessorUtil.isChecksumSame(API_CALL, params.checksum, request.getQueryString())) {
-    invalid("checksumError", "You did not pass the checksum security check")
-    return
-  }
-  // END - backward compatibility
-  
-  ApiErrors errors = new ApiErrors();
-  paramsProcessorUtil.processRequiredCreateParams(params, errors);
+    if (StringUtils.isEmpty(params.meetingID)) {
+      invalid("missingParamMeetingID", "You must specify a meeting ID for the meeting.");
+      return
+    }
+    
+    if (! paramsProcessorUtil.isChecksumSame(API_CALL, params.checksum, request.getQueryString())) {
+      invalid("checksumError", "You did not pass the checksum security check")
+      return
+    }
+    // END - backward compatibility
+    
+    ApiErrors errors = new ApiErrors();
+    paramsProcessorUtil.processRequiredCreateParams(params, errors);
 
     if (errors.hasErrors()) {
       respondWithErrors(errors)
@@ -116,25 +132,35 @@ class ApiController {
       respondWithErrors(errors)
       return
     }
-    
-    
+        
     // Translate the external meeting id into an internal meeting id.
     String internalMeetingId = paramsProcessorUtil.convertToInternalMeetingId(params.meetingID);    
     Meeting existing = meetingService.getMeeting(internalMeetingId);
 
     // Meeting not existent or already recorded
-    if (existing == null) {
+/*    if (existing == null) {
       log.debug "Conference not found"
       errors.recordingNotFound();
       respondWithErrors(errors);
-    }   
-     
+    }       */
+
     Meeting newMeeting = paramsProcessorUtil.processCreateParams(params);      
 
     if (meetingService.existPresentationVideo(newMeeting)) {
       log.debug "Conference already processed or started for presentation video"
-      errors.meetingIdProcessedError();
-      respondWithErrors(errors);
+      withFormat {  
+          xml {
+            render(contentType:"text/xml") {
+              response() {
+                returncode(RESP_CODE_SUCCESS)
+                meetingId(newMeeting.getExternalId())
+                messageKey("duplicateWarning")
+                message("This conference was already in existence and may currently be in progress.")
+              }
+            }
+          }
+        }
+
     } else {
       log.debug "Conference " + newMeeting.getExternalId() + " will start for presentation video ";
 
