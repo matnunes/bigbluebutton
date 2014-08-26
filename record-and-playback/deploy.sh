@@ -54,6 +54,7 @@ sudo mkdir -p /var/bigbluebutton/recording/publish/
 sudo mkdir -p /var/bigbluebutton/recording/status/recorded/
 sudo mkdir -p /var/bigbluebutton/recording/status/archived/
 sudo mkdir -p /var/bigbluebutton/recording/status/processed/
+sudo mkdir -p /var/bigbluebutton/recording/status/presentation_video/
 sudo mkdir -p /var/bigbluebutton/recording/status/sanity/
 
 sudo mv /usr/local/bigbluebutton/core/scripts/*.nginx /etc/bigbluebutton/nginx/

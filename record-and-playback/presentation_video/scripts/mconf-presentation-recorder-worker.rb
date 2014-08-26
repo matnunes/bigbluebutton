@@ -61,18 +61,21 @@ end
 # This worker is instantiated only once by God.
 # record_meeting has an infinite loop that looks for new meetings to record
 def record_meeting
-  published_dir = $bbb_props['published_dir']
-  unpublished_dir = $bbb_props['unpublished_dir']
+  #published_dir = $bbb_props['published_dir']
+  #unpublished_dir = $bbb_props['unpublished_dir']
   presentation_recorder_dir = $props['presentation_recorder_dir']
+  presentation_video_status_dir = $props['presentation_video_status_dir']
 
   record_in_progress = Hash[(Dir.entries("#{presentation_recorder_dir}") - ['.', '..']).map {|v| [v, nil]}]
 
   while true
-    published_meetings = Hash[Dir.glob("#{published_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
-    unpublished_meetings = Hash[Dir.glob("#{unpublished_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
-    all_meetings = published_meetings.merge(unpublished_meetings)
+    #published_meetings = Hash[Dir.glob("#{published_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
+    #unpublished_meetings = Hash[Dir.glob("#{unpublished_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
+    #all_meetings = published_meetings.merge(unpublished_meetings)
+
+    all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/, '')}
     
-    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}    
+    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
     recorded_meetings.each do |k|
       BigBlueButton.wait record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k

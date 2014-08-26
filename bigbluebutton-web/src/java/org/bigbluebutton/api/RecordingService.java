@@ -32,7 +32,7 @@ public class RecordingService {
 	
 	private String publishedDir = "/var/bigbluebutton/published";
 	private String unpublishedDir = "/var/bigbluebutton/unpublished";
-	private String presentationVideoDir = "/var/bigbluebutton/presentation_video";
+	private String presentationVideoStatusDir = "/var/bigbluebutton/recording/status/presentation_video";
 	private RecordingServiceHelper recordingServiceHelper;
 	private String recordStatusDir;
 	
@@ -54,7 +54,7 @@ public class RecordingService {
 	}
 	
 	public void startPresentationVideo(String meetingId) {
-		String done = presentationVideoDir + "/" + meetingId + ".done";
+		String done = presentationVideoStatusDir + "/" + meetingId + ".done";
 
 		File doneFile = new File(done);
 		if (!doneFile.exists()) {
@@ -73,7 +73,7 @@ public class RecordingService {
 	}
 
 	public boolean existPresentationVideo(String meetingId) {
-		String done = presentationVideoDir + "/" + meetingId + ".done";
+		String done = presentationVideoStatusDir + "/" + meetingId + ".done";
 
 		File doneFile = new File(done);
 		if (doneFile.exists())

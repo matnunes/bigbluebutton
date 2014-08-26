@@ -7,6 +7,7 @@ presentation_published_dir: /var/bigbluebutton/published/presentation
 presentation_unpublished_dir: /var/bigbluebutton/unpublished/presentation
 
 presentation_recorder_dir: /var/bigbluebutton/recording/process/presentation_recorder
+presentation_video_status_dir: /var/bigbluebutton/recording/status/presentation_video
 
 firefox_home: /tmp/firefox_presentation_video
 firefox_profile: /tmp/firefox_presentation_video/new_profile/
