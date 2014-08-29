@@ -20,6 +20,7 @@
 package org.bigbluebutton.api;
 
 import java.io.File;
+import org.apache.commons.io.FileUtils;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,6 +55,28 @@ public class RecordingService {
 	}
 	
 	public void startPresentationVideo(String meetingId) {
+
+		File xmlFile = null;
+		File publishedXmlFile = new File(publishedDir + "/" + meetingId + "/metadata.xml");
+		File unpublishedXmlFile = new File(publishedDir + "/" + meetingId + "/metadata.xml");
+
+		if (publishedXmlFile.exists()) {
+			xmlFile = publishedXmlFile;
+		} else if (unpublishedXmlFile.exists()) {
+			xmlFile = publishedXmlFile;
+		} else {
+			log.error("No published nor unpublished XML file for meeting " + meetingId);
+		}
+
+		if (xmlFile != null) {
+			try {
+				File xmlDestFile = new File(presentationVideoStatusDir + "/" + meetingId + ".xml");
+				FileUtils.copyDirectory(xmlFile, xmlDestFile);
+			} catch (Exception e) {
+				log.error("Error while handling XML file for meeting " + meetingId);
+			}			
+		}
+		/*
 		String done = presentationVideoStatusDir + "/" + meetingId + ".done";
 
 		File doneFile = new File(done);
@@ -69,14 +92,14 @@ public class RecordingService {
 			}
 		} else {
 			log.error(done + " file already exists.");
-		}		
+		}*/		
 	}
 
 	public boolean existPresentationVideo(String meetingId) {
-		String done = presentationVideoStatusDir + "/" + meetingId + ".done";
+		String xml = presentationVideoStatusDir + "/" + meetingId + ".xml";
 
-		File doneFile = new File(done);
-		if (doneFile.exists())
+		File xmlFile = new File(xml);
+		if (xmlFile.exists())
 			return true;
 		else
 			return false;

@@ -73,7 +73,7 @@ def record_meeting
     #unpublished_meetings = Hash[Dir.glob("#{unpublished_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
     #all_meetings = published_meetings.merge(unpublished_meetings)
 
-    all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/, '')}
+    all_meetings = Hash[Dir.glob("#{presentation_video_status_dir}/*.xml").map {|v| [File.basename(v).sub(/.xml/, ''), v]}]
     
     recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
     recorded_meetings.each do |k|

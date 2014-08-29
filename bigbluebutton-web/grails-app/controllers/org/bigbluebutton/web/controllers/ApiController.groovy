@@ -134,11 +134,11 @@ class ApiController {
     }
         
     // Translate the external meeting id into an internal meeting id.
-    String internalMeetingId = paramsProcessorUtil.convertToInternalMeetingId(params.meetingID);    
+/*    String internalMeetingId = paramsProcessorUtil.convertToInternalMeetingId(params.meetingID);    
     Meeting existing = meetingService.getMeeting(internalMeetingId);
 
     // Meeting not existent or already recorded
-/*    if (existing == null) {
+    if (existing == null) {
       log.debug "Conference not found"
       errors.recordingNotFound();
       respondWithErrors(errors);
