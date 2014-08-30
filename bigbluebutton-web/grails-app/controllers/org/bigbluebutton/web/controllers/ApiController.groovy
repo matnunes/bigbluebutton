@@ -146,7 +146,21 @@ class ApiController {
 
     Meeting newMeeting = paramsProcessorUtil.processCreateParams(params);      
 
-    if (meetingService.existPresentationVideo(newMeeting)) {
+    if (!meetingService.existMetadata(newMeeting)) {
+      log.debug "No published nor unpublished metadata found for the conference."
+      withFormat {  
+          xml {
+            render(contentType:"text/xml") {
+              response() {
+                returncode(RESP_CODE_FAILED)
+                meetingId(newMeeting.getExternalId())
+                messageKey("noMetadata")
+                message("No metadata found for the conference.")
+              }
+            }
+          }
+        }
+    } else if (meetingService.existPresentationVideo(newMeeting)) {
       log.debug "Conference already processed or started for presentation video"
       withFormat {  
           xml {

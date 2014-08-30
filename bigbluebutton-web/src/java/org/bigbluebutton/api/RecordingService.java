@@ -57,25 +57,26 @@ public class RecordingService {
 	public void startPresentationVideo(String meetingId) {
 
 		File xmlFile = null;
-		File publishedXmlFile = new File(publishedDir + "/" + meetingId + "/metadata.xml");
-		File unpublishedXmlFile = new File(publishedDir + "/" + meetingId + "/metadata.xml");
+		File publishedXmlFile = new File(publishedDir + "/presentation/" + meetingId + "/metadata.xml");
+		File unpublishedXmlFile = new File(unpublishedDir + "/presentation/" + meetingId + "/metadata.xml");
 
 		if (publishedXmlFile.exists()) {
 			xmlFile = publishedXmlFile;
 		} else if (unpublishedXmlFile.exists()) {
 			xmlFile = publishedXmlFile;
-		} else {
-			log.error("No published nor unpublished XML file for meeting " + meetingId);
 		}
 
 		if (xmlFile != null) {
-			try {
+			try {				
 				File xmlDestFile = new File(presentationVideoStatusDir + "/" + meetingId + ".xml");
-				FileUtils.copyDirectory(xmlFile, xmlDestFile);
+				log.debug("Copying " + xmlFile.getAbsolutePath() + " to " + xmlDestFile.getAbsolutePath());
+				FileUtils.copyFile(xmlFile, xmlDestFile);
 			} catch (Exception e) {
 				log.error("Error while handling XML file for meeting " + meetingId);
 			}			
-		}
+		} else {
+			log.error("No published nor unpublished XML file for meeting " + meetingId);
+		}		
 		/*
 		String done = presentationVideoStatusDir + "/" + meetingId + ".done";
 
@@ -100,6 +101,20 @@ public class RecordingService {
 
 		File xmlFile = new File(xml);
 		if (xmlFile.exists())
+			return true;
+		else
+			return false;
+	}
+
+	public boolean existMetadata(String meetingId) {
+		String publishedMetadata = publishedDir + "/presentation/" + meetingId + "/metadata.xml";
+		String unpublishedMetadata = unpublishedDir + "/presentation/" + meetingId + "/metadata.xml";
+
+		log.debug("Check if " + publishedMetadata + " or " + unpublishedMetadata + " exist.");
+
+		File xmlPublished = new File(publishedMetadata);
+		File xmlUnpublished = new File(unpublishedMetadata);
+		if (xmlPublished.exists() || xmlUnpublished.exists())
 			return true;
 		else
 			return false;
