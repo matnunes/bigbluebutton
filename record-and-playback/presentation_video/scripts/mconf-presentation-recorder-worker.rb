@@ -61,8 +61,8 @@ end
 # This worker is instantiated only once by God.
 # record_meeting has an infinite loop that looks for new meetings to record
 def record_meeting
-  #published_dir = $bbb_props['published_dir']
-  #unpublished_dir = $bbb_props['unpublished_dir']
+  published_dir = $bbb_props['published_dir']
+  unpublished_dir = $bbb_props['unpublished_dir']
   presentation_recorder_dir = $props['presentation_recorder_dir']
   presentation_video_status_dir = $props['presentation_video_status_dir']
 
@@ -73,7 +73,7 @@ def record_meeting
     #unpublished_meetings = Hash[Dir.glob("#{unpublished_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
     #all_meetings = published_meetings.merge(unpublished_meetings)
 
-    all_meetings = Hash[Dir.glob("#{presentation_video_status_dir}/*.xml").map {|v| [File.basename(v).sub(/.xml/, ''), v]}]
+    all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/,'')}
     
     recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
     recorded_meetings.each do |k|
@@ -90,7 +90,7 @@ def record_meeting
       FileUtils.rm error_file
     end
 
-    meetings_to_record = all_meetings.keys - recorded_meetings - record_in_progress.keys
+    meetings_to_record = all_meetings - recorded_meetings - record_in_progress.keys
     meetings_to_record.sort! {|x,y| x.sub(/.*-/, "") <=> y.sub(/.*-/, "")}
 
     #BigBlueButton.logger.info "Published meetings:\n#{BigBlueButton.hash_to_str(published_meetings)}"
@@ -107,8 +107,18 @@ def record_meeting
           break
         end
 
+        metadata_xml = nil
+        published_xml = "#{published_dir}/presentation/#{record_id}/metadata.xml"
+        unpublished_xml = "#{unpublished_dir}/presentation/#{record_id}/metadata.xml"
+
+        if File.exist?(published_xml)
+          metadata_xml = published_xml
+        elsif File.exist?(unpublished_xml)
+          metadata_xml = unpublished_xml
+        end
+
         # send to presentation_recorder the metadata xml
-        command = "ruby record/presentation_recorder.rb -m #{all_meetings[record_id]} -d #{get_free_display}"
+        command = "ruby record/presentation_recorder.rb -m #{metadata_xml} -d #{get_free_display}"
         record_in_progress[record_id] = BigBlueButton.execute_async(command)
       end
     end

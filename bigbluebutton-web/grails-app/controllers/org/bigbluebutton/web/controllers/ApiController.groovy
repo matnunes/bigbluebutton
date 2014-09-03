@@ -155,13 +155,13 @@ class ApiController {
                 returncode(RESP_CODE_FAILED)
                 meetingId(newMeeting.getExternalId())
                 messageKey("noMetadata")
-                message("No metadata found for the conference.")
+                message("Required metadata not found for the conference.")
               }
             }
           }
         }
     } else if (meetingService.existPresentationVideo(newMeeting)) {
-      log.debug "Conference already processed or started for presentation video"
+      log.debug "Conference " + newMeeting.getExternalId() + " already processed or started for presentation video"
       withFormat {  
           xml {
             render(contentType:"text/xml") {
