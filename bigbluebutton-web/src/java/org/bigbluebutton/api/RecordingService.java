@@ -54,30 +54,7 @@ public class RecordingService {
 		}
 	}
 	
-	public void startPresentationVideo(String meetingId) {
-/*
-		File xmlFile = null;
-		File publishedXmlFile = new File(publishedDir + "/presentation/" + meetingId + "/metadata.xml");
-		File unpublishedXmlFile = new File(unpublishedDir + "/presentation/" + meetingId + "/metadata.xml");
-
-		if (publishedXmlFile.exists()) {
-			xmlFile = publishedXmlFile;
-		} else if (unpublishedXmlFile.exists()) {
-			xmlFile = publishedXmlFile;
-		}
-
-		if (xmlFile != null) {
-			try {				
-				File xmlDestFile = new File(presentationVideoStatusDir + "/" + meetingId + ".xml");
-				log.debug("Copying " + xmlFile.getAbsolutePath() + " to " + xmlDestFile.getAbsolutePath());
-				FileUtils.copyFile(xmlFile, xmlDestFile);
-			} catch (Exception e) {
-				log.error("Error while handling XML file for meeting " + meetingId);
-			}			
-		} else {
-			log.error("No published nor unpublished XML file for meeting " + meetingId);
-		}		*/
-		
+	public void startPresentationVideo(String meetingId) {		
 		String done = presentationVideoStatusDir + "/" + meetingId + ".done";
 
 		File doneFile = new File(done);
@@ -112,8 +89,11 @@ public class RecordingService {
 
 		File xmlPublished = new File(publishedMetadata);
 		File xmlUnpublished = new File(unpublishedMetadata);
-		if (xmlPublished.exists() || xmlUnpublished.exists()) {
-			log.debug("Metadata exist at " + publishedMetadata + " or " + unpublishedMetadata);
+		if (xmlPublished.exists()) {
+			log.debug("Metadata exist at " + publishedMetadata);
+			return true;
+		} else if (xmlUnpublished.exists()) {
+			log.debug("Metadata exist at " + unpublishedMetadata);
 			return true;
 		} else {
 			log.debug("Metadata does not exist at " + publishedMetadata + " nor " + unpublishedMetadata);

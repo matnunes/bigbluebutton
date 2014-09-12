@@ -311,13 +311,6 @@ public class MeetingService implements MessageListener {
 	public void generatePresentationVideo(Meeting m) {
 		log.debug("Generating presentation video for meeting with external id: " + m.getExternalId());
 		recordingService.startPresentationVideo(m.getExternalId());
-		/*
-		if (existPresentationVideo(m)){
-			log.debug("Presentation video already started or existent for meeting " + m.getExternalId());
-		} else {
-			log.debug("Presentation video not started nor existent for meeting " + m.getExternalId());
-			recordingService.startPresentationVideo(m.getExternalId());
-		}*/		
 	}
 
 	public boolean existPresentationVideo(Meeting m) {
