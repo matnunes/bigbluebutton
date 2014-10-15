@@ -48,8 +48,10 @@ end
 
 BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_recorder/process-#{meeting_id}.log", 'daily' )
 
+process_done = "#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.done"
+
 # This recording has never been processed
-if not FileTest.directory?(target_dir)  
+if not FileTest.directory?(process_done)  
 
   BigBlueButton.logger.info("Trying to record meeting #{meeting_id} at display #{display_id} using presentation_recorder.rb")
 
@@ -57,11 +59,23 @@ if not FileTest.directory?(target_dir)
   video_recorder.target_dir = target_dir
   begin
     video_recorder.record(metadata_xml, display_id)
+    
+    process_presentation_fail = "#{recording_dir}/status/processed/#{meeting_id}-presentation_video.fail"
+    publish_presentation_fail = "#{recording_dir}/status/processed/#{meeting_id}-presentation_video.fail"
+
+    BigBlueButton.logger.info "Deleting #{process_presentation_fail} and #{publish_presentation_fail} to force re-execution of presentation_video"
+
+    if FileTest.file?(process_presentation_fail)
+      FileUtils.rm("#{process_presentation_fail}")
+    end    
+    if FileTest.file?(publish_presentation_fail)
+      FileUtils.rm("#{publish_presentation_fail}")
+    end
   rescue Exception => e
     BigBlueButton.logger.error "Something went wrong on the record method: #{e.to_s}"
 
     BigBlueButton.logger.error "Creating error file for meeting #{meeting_id}"
-    process_error = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.error", "w")
+    process_error = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.fail", "w")
     process_error.write("Error processing #{meeting_id}")
     process_error.close
   end
