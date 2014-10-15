@@ -61,7 +61,7 @@ if not FileTest.directory?(process_done)
     video_recorder.record(metadata_xml, display_id)
     
     process_presentation_fail = "#{recording_dir}/status/processed/#{meeting_id}-presentation_video.fail"
-    publish_presentation_fail = "#{recording_dir}/status/processed/#{meeting_id}-presentation_video.fail"
+    publish_presentation_fail = "#{recording_dir}/status/published/#{meeting_id}-presentation_video.fail"
 
     BigBlueButton.logger.info "Deleting #{process_presentation_fail} and #{publish_presentation_fail} to force re-execution of presentation_video"
 

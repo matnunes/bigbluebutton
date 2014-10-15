@@ -99,7 +99,7 @@ def record_meeting
     BigBlueButton.logger.info "Meetings already recorded:\n#{BigBlueButton.hash_to_str(recorded_meetings)}"
     BigBlueButton.logger.info "Meetings being recorder right now:\n#{BigBlueButton.hash_to_str(record_in_progress)}"
     BigBlueButton.logger.info "Meetings to record:\n#{BigBlueButton.hash_to_str(meetings_to_record)}"
-    BigBlueButton.logger.info "Meetings with error: \n#{BigBlueButton.hash_to_str(error_meetings)}"
+    BigBlueButton.logger.info "Meetings with error: \n#{BigBlueButton.hash_to_str(failed_meetings)}"
 
     if not meetings_to_record.empty?
       meetings_to_record.each do |record_id|
