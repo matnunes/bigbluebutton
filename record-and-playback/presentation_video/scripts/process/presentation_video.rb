@@ -34,29 +34,33 @@ meeting_id = opts[:meeting_id]
 # This script lives in scripts/archive/steps while properties.yaml lives in scripts/
 bbb_props = YAML::load(File.open('../../core/scripts/bigbluebutton.yml'))
 recording_dir = bbb_props['recording_dir']
+log_dir = bbb_props['log_dir']
 
 props = YAML::load(File.open('presentation_video.yml'))
 presentation_published_dir = props['presentation_published_dir']
 presentation_unpublished_dir = props['presentation_unpublished_dir']
 playback_dir = props['playback_dir']
 
-target_dir = "#{recording_dir}/process/presentation_video/#{meeting_id}"
-BigBlueButton.logger.info "Testing if #{target_dir} exists"
+FileUtils.mkdir_p "/var/log/bigbluebutton/presentation_video"
+BigBlueButton.logger = Logger.new("#{log_dir}/presentation_video/process-#{meeting_id}.log", 'daily' )
 
-if not FileTest.directory?(target_dir)
+# Create target_dir in advance in order to allow rap-worker to write its processing time in this folder
+target_dir = "#{recording_dir}/process/presentation_video/#{meeting_id}"
+FileUtils.mkdir_p target_dir
+
+#process_done = "#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done"
+#BigBlueButton.logger.info "Testing if #{process_done} exists"
+
+# This check is probably not necessary because rap-worker already checks .done files
+# Rap-worker also generates the .fail file in case that this doesn't generates the required .done
+#if not FileTest.directory?(process_done)
   # this recording has never been processed
 
   recorder_done = "#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.done"
-  BigBlueButton.logger.info "Testing if #{recorder_done} exists"
+  BigBlueButton.logger.info "Testing if presentation_recorder finished for meeting #{meeting_id}"
 
   if File.exists?(recorder_done)
     # the video was recorded, now it's time to prepare everything
-
-    FileUtils.mkdir_p target_dir
-
-    FileUtils.mkdir_p "/var/log/bigbluebutton/presentation_video"
-    BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_video/process-#{meeting_id}.log", 'daily' )
-
     presentation_recorder_dir = "#{recording_dir}/process/presentation_recorder/#{meeting_id}"
     recorded_screen_raw_file = "#{presentation_recorder_dir}/recorded_screen_raw.webm"
 
@@ -118,6 +122,6 @@ if not FileTest.directory?(target_dir)
 
     process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
     process_done.write("Processed #{meeting_id}")
-    process_done.close  
+    process_done.close
   end
-end
+#end
