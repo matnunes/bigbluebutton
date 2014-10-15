@@ -75,19 +75,19 @@ def record_meeting
 
     all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/,'')}
     
-    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
+    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
     recorded_meetings.each do |k|
       BigBlueButton.wait record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k
     end
 
-    error_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/**/*-presentation_recorder.error").map {|v| File.basename(v).sub(/-presentation_recorder.error/, '')}
-    error_meetings.each do |k|
+    failed_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/*-presentation_recorder.fail").map {|v| File.basename(v).sub(/-presentation_recorder.fail/, '')}
+    failed_meetings.each do |k|
       BigBlueButton.kill record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k
-      error_file = "/var/bigbluebutton/recording/status/processed/#{k}-presentation_recorder.error"
-      BigBlueButton.logger.info "Error file #{error_file}"
-      FileUtils.rm error_file
+      fail_file = "/var/bigbluebutton/recording/status/processed/#{k}-presentation_recorder.fail"
+      BigBlueButton.logger.info "Error file #{fail_file}"
+      FileUtils.rm fail_file
     end
 
     meetings_to_record = all_meetings - recorded_meetings - record_in_progress.keys
