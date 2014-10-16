@@ -98,6 +98,10 @@ if ($playback == "presentation_video")
 
     BigBlueButton.logger.info("Removing published files.")
     FileUtils.rm_r(Dir.glob("#{target_dir}/*"))
+
+    process_done = File.new("#{recording_dir}/status/published/#{$meeting_id}-presentation_video.done", "w")
+    process_done.write("Processed #{$meeting_id}")
+    process_done.close
   end
 
 end

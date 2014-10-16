@@ -56,7 +56,7 @@ FileUtils.mkdir_p target_dir
 #if not FileTest.directory?(process_done)
   # this recording has never been processed
 
-  recorder_done = "#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.done"
+  recorder_done = "#{recording_dir}/status/published/#{meeting_id}-presentation_recorder.done"
   BigBlueButton.logger.info "Testing if presentation_recorder finished for meeting #{meeting_id}"
 
   if File.exists?(recorder_done)
