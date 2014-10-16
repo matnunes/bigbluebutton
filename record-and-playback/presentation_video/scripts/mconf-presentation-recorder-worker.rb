@@ -28,7 +28,7 @@ require 'yaml'
 require 'fileutils'
 require 'pathname'
 
-BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-recorder-worker.log",'daily' )
+#BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-recorder-worker.log",'daily' )
 
 $props = YAML::load(File.open('mconf-presentation-recorder.yml'))
 $bbb_props = YAML::load(File.open('bigbluebutton.yml'))
@@ -69,23 +69,25 @@ def record_meeting
   record_in_progress = Hash[(Dir.entries("#{presentation_recorder_dir}") - ['.', '..']).map {|v| [v, nil]}]
 
   while true
+    BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-recorder-worker.log",'daily' )
+
     #published_meetings = Hash[Dir.glob("#{published_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
     #unpublished_meetings = Hash[Dir.glob("#{unpublished_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
     #all_meetings = published_meetings.merge(unpublished_meetings)
 
     all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/,'')}
     
-    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
+    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/published/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
     recorded_meetings.each do |k|
       BigBlueButton.wait record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k
     end
 
-    failed_meetings = Dir.glob("/var/bigbluebutton/recording/status/processed/*-presentation_recorder.fail").map {|v| File.basename(v).sub(/-presentation_recorder.fail/, '')}
+    failed_meetings = Dir.glob("/var/bigbluebutton/recording/status/published/*-presentation_recorder.fail").map {|v| File.basename(v).sub(/-presentation_recorder.fail/, '')}
     failed_meetings.each do |k|
       BigBlueButton.kill record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k
-      fail_file = "/var/bigbluebutton/recording/status/processed/#{k}-presentation_recorder.fail"
+      fail_file = "/var/bigbluebutton/recording/status/published/#{k}-presentation_recorder.fail"
       BigBlueButton.logger.info "Error file #{fail_file}"
       FileUtils.rm fail_file
     end
