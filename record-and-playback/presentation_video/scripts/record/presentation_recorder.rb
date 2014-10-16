@@ -63,7 +63,7 @@ if not FileTest.directory?(process_done)
     process_presentation_fail = "#{recording_dir}/status/processed/#{meeting_id}-presentation_video.fail"
     publish_presentation_fail = "#{recording_dir}/status/published/#{meeting_id}-presentation_video.fail"
 
-    BigBlueButton.logger.info "Deleting #{process_presentation_fail} and #{publish_presentation_fail} to force re-execution of presentation_video"
+    BigBlueButton.logger.info "Deleting fail files #{process_presentation_fail} and #{publish_presentation_fail} to force re-execution of presentation_video"
 
     if FileTest.file?(process_presentation_fail)
       FileUtils.rm("#{process_presentation_fail}")
@@ -75,7 +75,7 @@ if not FileTest.directory?(process_done)
     BigBlueButton.logger.error "Something went wrong on the record method: #{e.to_s}"
 
     BigBlueButton.logger.error "Creating error file for meeting #{meeting_id}"
-    process_error = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.fail", "w")
+    process_error = File.new("#{recording_dir}/status/published/#{meeting_id}-presentation_recorder.fail", "w")
     process_error.write("Error processing #{meeting_id}")
     process_error.close
   end
