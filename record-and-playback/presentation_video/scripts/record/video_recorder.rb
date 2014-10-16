@@ -234,7 +234,7 @@ module BigBlueButton
 				self.tear_down
 
 				recording_dir = $bbb_props['recording_dir']
-				process_done = File.new("#{recording_dir}/status/processed/#{@meeting_id}-presentation_recorder.done", "w")
+				process_done = File.new("#{recording_dir}/status/published/#{@meeting_id}-presentation_recorder.done", "w")
 				process_done.write("Processed #{@meeting_id}")
 				process_done.close
 			rescue Exception => e
