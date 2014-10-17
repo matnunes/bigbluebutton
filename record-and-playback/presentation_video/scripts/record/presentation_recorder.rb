@@ -37,18 +37,66 @@ display_id = opts[:display_id]
 
 # This script lives in scripts/archive/steps while properties.yaml lives in scripts/
 bbb_props = YAML::load(File.open('../../core/scripts/bigbluebutton.yml'))
-recording_dir = bbb_props['recording_dir']
+$recording_dir = bbb_props['recording_dir']
+$published_dir = bbb_props['published_dir']
+$unpublished_dir = bbb_props['unpublished_dir']
 
-target_dir = "#{recording_dir}/process/presentation_recorder/#{meeting_id}"
+target_dir = "#{$recording_dir}/process/presentation_recorder/#{meeting_id}"
 
 log_dir = "/var/log/bigbluebutton/presentation_recorder/"
 if not Dir.exists?(log_dir)
     FileUtils.mkdir_p log_dir
 end
 
+# This method is based on bigbluebutton-config/bin/bbb-record and its rebuild function
+def presentation_video_restart(meeting_id)
+  # Check if raw files exist (not necessary)
+
+  # Delete (un)published files. It force presentation_video restart even if it was already processed
+  published_presentation_video = "#{$published_dir}/presentation_video/#{meeting_id}"
+  unpublished_presentation_video = "#{$unpublished_dir}/presentation_video/#{meeting_id}"
+
+  BigBlueButton.logger.info "Deleting published and unpublished folder of presentation_video for meeting #{meeting_id}"
+
+  if Dir.exists?(published_presentation_video)
+    FileUtils.rm_rf(published_presentation_video)
+  end
+  if Dir.exists?(unpublished_presentation_video)
+    FileUtils.rm_rf(unpublished_presentation_video)
+  end
+
+  # Delete status files
+  process_presentation_video_done = "#{$recording_dir}/status/processed/#{meeting_id}-presentation_video.done"
+  publish_presentation_video_done = "#{$recording_dir}/status/published/#{meeting_id}-presentation_video.done"
+  process_presentation_video_fail = "#{$recording_dir}/status/processed/#{meeting_id}-presentation_video.fail"
+  publish_presentation_video_fail = "#{$recording_dir}/status/published/#{meeting_id}-presentation_video.fail"
+
+  BigBlueButton.logger.info "Deleting done and fail status files of presentation_video for meeting #{meeting_id}"
+
+  if FileTest.file?(process_presentation_video_done)
+    FileUtils.rm("#{process_presentation_video_done}")
+  end  
+  if FileTest.file?(publish_presentation_video_done)
+    FileUtils.rm("#{publish_presentation_video_done}")
+  end
+  if FileTest.file?(process_presentation_video_fail)
+    FileUtils.rm("#{proceprocess_presentation_video_failss_presentation_fail}")
+  end
+  if FileTest.file?(publish_presentation_video_fail)
+    FileUtils.rm("#{publish_presentation_video_fail}")
+  end
+
+  # Restart presentation_video from archived
+  BigBlueButton.logger.info "Recreating archived and presentation process done files"
+
+  archived_done = File.new("#{$recording_dir}/status/archived/#{meeting_id}.done", "w")
+  process_presentation_done = File.new("#{$recording_dir}/status/process/#{meeting_id}-presentation.done", "w")
+
+end
+
 BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_recorder/process-#{meeting_id}.log", 'daily' )
 
-process_done = "#{recording_dir}/status/processed/#{meeting_id}-presentation_recorder.done"
+process_done = "#{$recording_dir}/status/processed/#{meeting_id}-presentation_recorder.done"
 
 # This recording has never been processed
 if not FileTest.directory?(process_done)  
@@ -59,23 +107,13 @@ if not FileTest.directory?(process_done)
   video_recorder.target_dir = target_dir
   begin
     video_recorder.record(metadata_xml, display_id)
-    
-    process_presentation_fail = "#{recording_dir}/status/processed/#{meeting_id}-presentation_video.fail"
-    publish_presentation_fail = "#{recording_dir}/status/published/#{meeting_id}-presentation_video.fail"
 
-    BigBlueButton.logger.info "Deleting fail files #{process_presentation_fail} and #{publish_presentation_fail} to force re-execution of presentation_video"
-
-    if FileTest.file?(process_presentation_fail)
-      FileUtils.rm("#{process_presentation_fail}")
-    end    
-    if FileTest.file?(publish_presentation_fail)
-      FileUtils.rm("#{publish_presentation_fail}")
-    end
+    presentation_video_restart(meeting_id)
   rescue Exception => e
     BigBlueButton.logger.error "Something went wrong on the record method: #{e.to_s}"
 
     BigBlueButton.logger.error "Creating error file for meeting #{meeting_id}"
-    process_error = File.new("#{recording_dir}/status/published/#{meeting_id}-presentation_recorder.fail", "w")
+    process_error = File.new("#{$recording_dir}/status/published/#{meeting_id}-presentation_recorder.fail", "w")
     process_error.write("Error processing #{meeting_id}")
     process_error.close
   end
