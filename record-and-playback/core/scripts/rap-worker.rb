@@ -260,8 +260,18 @@ def publish_processed_meeting(recording_dir)
     end
 
     if publish_succeeded
-      post_publish(meeting_id)
-      # Clean up the process done files
+      post_publish(meeting_id) 
+      #processed_done_files.each do |processed_done|
+      #  FileUtils.rm(processed_done)
+      #end
+
+      flow_process_done = "#{recording_dir}/status/processed/#{meeting_id}-#{process_type}.done"
+      if FileTest.exists?(flow_process_done)
+        FileUtils.rm(flow_process_done)
+      end
+
+      BigBlueButton.logger.debug "Done files for format #{process_type} deleted."
+      
       # Also clean up the publish and process work files
       Dir.glob("process/*.rb").sort.each do |process_script|
         match2 = /([^\/]*).rb$/.match(process_script)
