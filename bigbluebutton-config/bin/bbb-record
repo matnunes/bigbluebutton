@@ -78,6 +78,21 @@ mark_for_rebuild() {
 	touch $STATUS/archived/$MEETING_ID.done
 }
 
+mark_for_rebuild_video() {
+	MEETING_ID=$1
+	echo "Marking for rebuild $MEETING_ID presentation video"
+
+	# Remove the existing 'process' recording files
+	rm -rvf /var/bigbluebutton/recording/process/presentation_recorder/$MEETING_ID
+	rm -rvf /var/bigbluebutton/recording/publish/presentation_recorder/$MEETING_ID
+
+	# Clear out done files
+	rm -vf $STATUS/published/$MEETING_ID-presentation_recorder.fail
+	rm -vf $STATUS/published/$MEETING_ID-presentation_recorder.done
+	rm -vf $STATUS/processed/$MEETING_ID-presentation_recorder.fail
+	rm -vf $STATUS/processed/$MEETING_ID-presentation_recorder.done
+}
+
 mark_for_republish() { 
 	MEETING_ID=$1
 	#set -x
@@ -132,10 +147,11 @@ usage() {
         echo "   --check                          	check for configuration errors"
         echo "   --enable <workflow>              	enable a recording workflow"
         echo "   --disable <workflow>             	disable a recording workflow"
-        echo "   --tointernal <external meetingId>	get the internal meeting ids for the given external meetingId"
-        echo "   --toexternal <internal meetingId>	get the external meeting id for the given internal meetingId"
+        echo "   --tointernal <external meetingID>	get the internal meeting ids for the given external meetingId"
+        echo "   --toexternal <internal meetingID>	get the external meeting id for the given internal meetingId"
         echo "   --republish <internal meetingID>	republish the recording for meetingID. (Only for Matterhorn Integration)"
         #echo "   --rearchive [meetingId]		rearchive the recording (created before a restart)"
+        echo "   --rebuildVideo <internal meetingID>  rebuild the video output for the given internal meetingID"
 	echo
 }
 
@@ -177,6 +193,16 @@ while [ $# -gt 0 ]; do
 			shift
 		fi
                 REBUILD=1
+		shift
+                continue
+        fi
+        if [ "$1" = "-rebuildVideo" -o "$1" = "--rebuildVideo" ]; then
+		need_root
+		if [ ! -z "${2}" ]; then
+                	MEETING_ID="${2}"
+			shift
+		fi
+                REBUILD_VIDEO=1
 		shift
                 continue
         fi
@@ -304,6 +330,14 @@ if [ $REBUILD ]; then
 	echo "Pass an internal meeting id as parameter."
     else
 	mark_for_rebuild $MEETING_ID
+    fi
+fi 
+
+if [ $REBUILD_VIDEO ]; then
+    if [ -z "$MEETING_ID" ]; then
+	echo "Pass an internal meeting id as parameter."
+    else
+	mark_for_rebuild_video $MEETING_ID
     fi
 fi 
 
