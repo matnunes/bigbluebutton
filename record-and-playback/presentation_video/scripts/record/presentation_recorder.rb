@@ -80,7 +80,7 @@ def presentation_video_restart(meeting_id)
     FileUtils.rm("#{publish_presentation_video_done}")
   end
   if FileTest.file?(process_presentation_video_fail)
-    FileUtils.rm("#{proceprocess_presentation_video_failss_presentation_fail}")
+    FileUtils.rm("#{process_presentation_video_fail}")
   end
   if FileTest.file?(publish_presentation_video_fail)
     FileUtils.rm("#{publish_presentation_video_fail}")
@@ -90,7 +90,7 @@ def presentation_video_restart(meeting_id)
   BigBlueButton.logger.info "Recreating archived and presentation process done files"
 
   archived_done = File.new("#{$recording_dir}/status/archived/#{meeting_id}.done", "w")
-  process_presentation_done = File.new("#{$recording_dir}/status/process/#{meeting_id}-presentation.done", "w")
+  process_presentation_done = File.new("#{$recording_dir}/status/processed/#{meeting_id}-presentation.done", "w")
 
 end
 
@@ -109,6 +109,8 @@ if not FileTest.directory?(process_done)
     video_recorder.record(metadata_xml, display_id)
 
     presentation_video_restart(meeting_id)
+
+    BigBlueButton.logger.info("presentation_recorder done!")
   rescue Exception => e
     BigBlueButton.logger.error "Something went wrong on the record method: #{e.to_s}"
 
