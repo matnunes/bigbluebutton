@@ -41,6 +41,9 @@ presentation_published_dir = props['presentation_published_dir']
 presentation_unpublished_dir = props['presentation_unpublished_dir']
 playback_dir = props['playback_dir']
 
+recorder_props = YAML::load(File.open('mconf-presentation-recorder.yml'))
+presentation_recorder_dir = recorder_props['presentation_recorder_dir']
+
 FileUtils.mkdir_p "/var/log/bigbluebutton/presentation_video"
 BigBlueButton.logger = Logger.new("#{log_dir}/presentation_video/process-#{meeting_id}.log", 'daily' )
 
@@ -61,10 +64,10 @@ FileUtils.mkdir_p target_dir
 
   if File.exists?(recorder_done)
     # the video was recorded, now it's time to prepare everything
-    presentation_recorder_dir = "#{recording_dir}/process/presentation_recorder/#{meeting_id}"
-    recorded_screen_raw_file = "#{presentation_recorder_dir}/recorded_screen_raw.webm"
+    presentation_recorder_meeting_dir = "#{presentation_recorder_dir}/#{meeting_id}"
+    recorded_screen_raw_file = "#{presentation_recorder_meeting_dir}/recorded_screen_raw.webm"
 
-    FileUtils.cp_r "#{presentation_recorder_dir}/metadata.xml", "#{target_dir}/metadata.xml"
+    FileUtils.cp_r "#{presentation_recorder_meeting_dir}/metadata.xml", "#{target_dir}/metadata.xml"
     FileUtils.cp_r "#{recorded_screen_raw_file}", "#{target_dir}/"
 
     metadata = "#{target_dir}/metadata.xml"
@@ -115,13 +118,16 @@ FileUtils.mkdir_p target_dir
 
     BigBlueButton.logger.info "Mkclean done"
 
-    #BigBlueButton.logger.info "Deleting #{presentation_recorder_dir}/*"
+    BigBlueButton.logger.info "Deleting #{presentation_recorder_meeting_dir}/*"
 
-    # FileUtils.rm recorder_done
-    #FileUtils.rm_r(Dir.glob("#{presentation_recorder_dir}/*"))
+    #FileUtils.rm recorder_done
+    #FileUtils.rm_r(Dir.glob("#{presentation_recorder_meeting_dir}/*"))
 
     process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
     process_done.write("Processed #{meeting_id}")
     process_done.close
+
+    BigBlueButton.logger.info "Process done!"
   end
 #end
+
