@@ -117,6 +117,10 @@ def record_meeting
           metadata_xml = published_xml
         elsif File.exist?(unpublished_xml)
           metadata_xml = unpublished_xml
+        else
+          BigBlueButton.logger.info "No metadata.xml found for meetings #{record_id}."
+          BigBlueButton.logger.info "Skipping meeting. Probably presentation didn't finish yet for this meeting."
+          next
         end
 
         # send to presentation_recorder the metadata xml
