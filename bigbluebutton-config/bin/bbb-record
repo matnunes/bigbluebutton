@@ -54,28 +54,28 @@ TYPES=$(cd /usr/local/bigbluebutton/core/scripts/process; ls | grep '\.rb$' | se
 TYPES="$TYPES presentation_recorder"
 
 mark_for_rebuild() {
-	MEETING_ID=$1
-	echo "Marking for rebuild $MEETING_ID"
-	if [[ ! -d $BASE/raw/$MEETING_ID ]]; then
-		echo "Raw files for $MEETING_ID do not exist, can't rebuild"
-		exit 1
-	fi
+    MEETING_ID=$1
+    echo "Marking for rebuild $MEETING_ID"
+    if [[ ! -d $BASE/raw/$MEETING_ID ]]; then
+        echo "Raw files for $MEETING_ID do not exist, can't rebuild"
+        exit 1
+    fi
 
-	# Remove the existing 'published' recording files
-	rm -rvf /var/bigbluebutton/published/$type/$MEETING_ID
-	rm -rvf /var/bigbluebutton/unpublished/$type/$MEETING_ID
+    rm -vf $STATUS/sanity/$MEETING_ID.done
+    for type in $TYPES; do
+        # Remove the existing 'published' recording files
+        rm -rvf /var/bigbluebutton/published/$type/$MEETING_ID
+        rm -rvf /var/bigbluebutton/unpublished/$type/$MEETING_ID
 
-	# Clear out all the done files
-	rm -vf $STATUS/sanity/$MEETING_ID.done
-	for type in $TYPES; do
-		rm -vf $STATUS/published/$MEETING_ID-$type.fail
-		rm -vf $STATUS/published/$MEETING_ID-$type.done
-		rm -vf $STATUS/processed/$MEETING_ID-$type.fail
-		rm -vf $STATUS/processed/$MEETING_ID-$type.done
-	done
+        # Clear out all the done files
+        rm -vf $STATUS/published/$MEETING_ID-$type.fail
+        rm -vf $STATUS/published/$MEETING_ID-$type.done
+        rm -vf $STATUS/processed/$MEETING_ID-$type.fail
+        rm -vf $STATUS/processed/$MEETING_ID-$type.done
+    done
 
-	# Restart processing at the 'archived' step
-	touch $STATUS/archived/$MEETING_ID.done
+    # Restart processing at the 'archived' step
+    touch $STATUS/archived/$MEETING_ID.done
 }
 
 mark_for_rebuild_video() {
