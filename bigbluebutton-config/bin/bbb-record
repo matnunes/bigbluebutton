@@ -82,6 +82,12 @@ mark_for_rebuild_video() {
     MEETING_ID=$1
     echo "Marking for rebuild $MEETING_ID presentation video"
 
+    if [[ ! -e /var/bigbluebutton/published/presentation/$MEETING_ID/metadata.xml
+       && ! -e /var/bigbluebutton/unpublished/presentation/$MEETING_ID/metadata.xml]]; then
+        echo "No published nor unpublished metadata.xml for meeting, can't rebuild"
+        exit 1
+    fi
+
     # Remove the existing 'process' recording files
     rm -rvf /var/bigbluebutton/recording/process/presentation_recorder/$MEETING_ID
     rm -rvf /var/bigbluebutton/recording/publish/presentation_recorder/$MEETING_ID
@@ -91,6 +97,9 @@ mark_for_rebuild_video() {
     rm -vf $STATUS/published/$MEETING_ID-presentation_recorder.done
     rm -vf $STATUS/processed/$MEETING_ID-presentation_recorder.fail
     rm -vf $STATUS/processed/$MEETING_ID-presentation_recorder.done
+
+    # Create fail file to force meetings beeing processed to be stoped by worker
+    touch $STATUS/published/$MEETING_ID-presentation_recorder.fail    
 }
 
 mark_for_republish() { 
