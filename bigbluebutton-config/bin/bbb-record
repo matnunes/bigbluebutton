@@ -402,7 +402,10 @@ if [ $DELETE ]; then
   rm -f /var/bigbluebutton/recording/status/sanity/$MEETING_ID*
   rm -f /var/bigbluebutton/recording/status/processed/$MEETING_ID*
   rm -f /var/bigbluebutton/recording/status/published/$MEETING_ID*
-  
+
+  # Remove API Call of presentation_video
+  rm -f /var/bigbluebutton/recording/status/presentation_video/$MEETING_ID*
+
   # Remove all of the related files
   for type in $TYPES; do
     rm -rf /var/bigbluebutton/published/$type/$MEETING_ID*
@@ -420,6 +423,12 @@ if [ $DELETE ]; then
   rm -f /var/bigbluebutton/deskshare/$MEETING_ID*.flv
   rm -f /var/freeswitch/meetings/$MEETING_ID*.wav
   rm -rf /var/bigbluebutton/$MEETING_ID
+
+  # Remove raw files of presentation_recorder
+  rm -rf /var/bigbluebutton/recording/process/presentation_recorder/$MEETING_ID*
+
+  # Remove presentation_recorder log
+  rm -rf /var/log/bigbluebutton/presentation_recorder/*$MEETING_ID*
 fi
 
 if [ $DELETEALL ]; then
@@ -430,6 +439,9 @@ if [ $DELETEALL ]; then
   rm -f /var/bigbluebutton/recording/status/sanity/*
   rm -f /var/bigbluebutton/recording/status/processed/*
   rm -f /var/bigbluebutton/recording/status/published/*
+
+  # Remove API Call of presentation_video
+  rm -f /var/bigbluebutton/recording/status/presentation_video/*
 
   for type in $TYPES; do
     rm -rf /var/bigbluebutton/published/$type/*
@@ -446,6 +458,12 @@ if [ $DELETEALL ]; then
   rm -f /usr/share/red5/webapps/video/streams/*.flv
   rm -f /var/bigbluebutton/deskshare/*.flv
   rm -f /var/freeswitch/meetings/*.wav
+
+  # Remove raw files of presentation_recorder
+  rm -rf /var/bigbluebutton/recording/process/presentation_recorder/*
+
+  # Remove presentation_recorder log
+  rm -rf /var/log/bigbluebutton/presentation_recorder/*
 
   for meeting in $(ls /var/bigbluebutton | grep "[0-9]\{13\}$"); do
     echo "deleting: $meeting"
