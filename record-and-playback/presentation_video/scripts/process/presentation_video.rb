@@ -63,6 +63,13 @@ FileUtils.mkdir_p target_dir
   BigBlueButton.logger.info "Testing if presentation_recorder finished for meeting #{meeting_id}"
 
   if File.exists?(recorder_done)
+    
+    # Check if publish of presentation_video failed and force it to be restarted after process is done.
+    published_fail = "#{recording_dir}/status/published/#{meeting_id}-presentation_video.fail"    
+    if File.exists?(published_fail)
+      FileUtils.rm(published_fail)
+    end
+
     # the video was recorded, now it's time to prepare everything
     presentation_recorder_meeting_dir = "#{presentation_recorder_dir}/#{meeting_id}"
     recorded_screen_raw_file = "#{presentation_recorder_meeting_dir}/recorded_screen_raw.webm"
