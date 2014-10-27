@@ -82,8 +82,7 @@ mark_for_rebuild_video() {
     MEETING_ID=$1
     echo "Marking for rebuild $MEETING_ID presentation video"
 
-    if [[ ! -e /var/bigbluebutton/published/presentation/$MEETING_ID/metadata.xml
-       && ! -e /var/bigbluebutton/unpublished/presentation/$MEETING_ID/metadata.xml]]; then
+    if [[ ! -e /var/bigbluebutton/published/presentation/$MEETING_ID/metadata.xml ]] && [[ ! -e /var/bigbluebutton/unpublished/presentation/$MEETING_ID/metadata.xml ]]; then
         echo "No published nor unpublished metadata.xml for meeting, can't rebuild"
         exit 1
     fi
