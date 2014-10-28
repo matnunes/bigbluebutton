@@ -79,13 +79,14 @@ mark_for_rebuild() {
 }
 
 mark_for_rebuild_video() {
-    MEETING_ID=$1
-    echo "Marking for rebuild $MEETING_ID presentation video"
+    MEETING_ID=$1    
 
     if [[ ! -e /var/bigbluebutton/published/presentation/$MEETING_ID/metadata.xml ]] && [[ ! -e /var/bigbluebutton/unpublished/presentation/$MEETING_ID/metadata.xml ]]; then
-        echo "No published nor unpublished metadata.xml for meeting, can't rebuild"
+        echo "No published nor unpublished metadata.xml for meeting $MEETING_ID, can't rebuild"
         exit 1
     fi
+
+    echo "Marking for rebuild $MEETING_ID presentation video"
 
     # Remove the existing 'process' recording files
     rm -rvf /var/bigbluebutton/recording/process/presentation_recorder/$MEETING_ID
@@ -366,16 +367,20 @@ if [ $REBUILDALL ]; then
 fi 
 
 if [ $REBUILDALL_VIDEO ]; then
-    echo "Rebuilding all recordings for presentation_video"
+    echo "Rebuilding presentation_video of all recordings"
+
+    sudo /etc/init.d/mconf-presentation-recorder stop
 
     # Get done files
-    recordings=$(find $STATUS/presentation_video/ -iregex '.*\(done\)' -printf '%f\n')
+    recordings=$(find $STATUS/presentation_video/ -iregex '.*\(done\)' -printf '%f\n')    
     for recording in $recordings; do
         # Remove extension
         rec=$(echo "${recording%.*}")
         mark_for_rebuild_video $rec
     done
-fi
+
+    sudo /etc/init.d/mconf-presentation-recorder start
+fi 
 
 if [ $REPUBLISH ]; then
     if [ -z "$MEETING_ID" ]; then
