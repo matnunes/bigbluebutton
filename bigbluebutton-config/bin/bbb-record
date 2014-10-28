@@ -367,10 +367,15 @@ fi
 
 if [ $REBUILDALL_VIDEO ]; then
     echo "Rebuilding all recordings for presentation_video"
-    for recording in $(dir $BASE/process/presentation_recorder); do
-        mark_for_rebuild_video $recording
+
+    # Get done files
+    recordings=$(find $STATUS/presentation_video/ -iregex '.*\(done\)' -printf '%f\n')
+    for recording in $recordings; do
+        # Remove extension
+        rec=$(echo "${recording%.*}")
+        mark_for_rebuild_video $rec
     done
-fi 
+fi
 
 if [ $REPUBLISH ]; then
     if [ -z "$MEETING_ID" ]; then
