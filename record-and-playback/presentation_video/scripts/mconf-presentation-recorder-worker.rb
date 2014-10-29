@@ -28,8 +28,6 @@ require 'yaml'
 require 'fileutils'
 require 'pathname'
 
-#BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-recorder-worker.log",'daily' )
-
 $props = YAML::load(File.open('mconf-presentation-recorder.yml'))
 $bbb_props = YAML::load(File.open('bigbluebutton.yml'))
 
@@ -71,10 +69,6 @@ def record_meeting
   while true
     BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-recorder-worker.log",'daily' )
 
-    #published_meetings = Hash[Dir.glob("#{published_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
-    #unpublished_meetings = Hash[Dir.glob("#{unpublished_dir}/presentation/**/metadata.xml").map {|v| [metadata_to_record_id(v), v]}]
-    #all_meetings = published_meetings.merge(unpublished_meetings)
-
     all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/,'')}
     
     recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/published/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
@@ -95,8 +89,6 @@ def record_meeting
     meetings_to_record = all_meetings - recorded_meetings - record_in_progress.keys
     meetings_to_record.sort! {|x,y| x.sub(/.*-/, "") <=> y.sub(/.*-/, "")}
 
-    #BigBlueButton.logger.info "Published meetings:\n#{BigBlueButton.hash_to_str(published_meetings)}"
-    #BigBlueButton.logger.info "Unpublished meetings:\n#{BigBlueButton.hash_to_str(unpublished_meetings)}"
     BigBlueButton.logger.info "All meetings (published + unpublished):\n#{BigBlueButton.hash_to_str(all_meetings)}"
     BigBlueButton.logger.info "Meetings already recorded:\n#{BigBlueButton.hash_to_str(recorded_meetings)}"
     BigBlueButton.logger.info "Meetings being recorder right now:\n#{BigBlueButton.hash_to_str(record_in_progress)}"
@@ -104,29 +96,30 @@ def record_meeting
     BigBlueButton.logger.info "Meetings with error: \n#{BigBlueButton.hash_to_str(failed_meetings)}"
 
     if not meetings_to_record.empty?
-      meetings_to_record.each do |record_id|
+
+        record_id = meetings_to_record.first
+        BigBlueButton.logger.info "Will try to process meeting: #{record_id}"        
         if record_in_progress.count >= $props['simultaneous_meetings']
-          break
-        end
-
-        metadata_xml = nil
-        published_xml = "#{published_dir}/presentation/#{record_id}/metadata.xml"
-        unpublished_xml = "#{unpublished_dir}/presentation/#{record_id}/metadata.xml"
-
-        if File.exist?(published_xml)
-          metadata_xml = published_xml
-        elsif File.exist?(unpublished_xml)
-          metadata_xml = unpublished_xml
+          BigBlueButton.logger.info "Maximum number of simmultaneous meetings reached!"
         else
-          BigBlueButton.logger.info "No metadata.xml found for meetings #{record_id}."
-          BigBlueButton.logger.info "Skipping meeting. Probably presentation didn't finish yet for this meeting."
-          next
-        end
+          metadata_xml = nil
+          published_xml = "#{published_dir}/presentation/#{record_id}/metadata.xml"
+          unpublished_xml = "#{unpublished_dir}/presentation/#{record_id}/metadata.xml"
 
-        # send to presentation_recorder the metadata xml
-        command = "ruby record/presentation_recorder.rb -m #{metadata_xml} -d #{get_free_display}"
-        record_in_progress[record_id] = BigBlueButton.execute_async(command)
-      end
+          if File.exist?(published_xml)
+            metadata_xml = published_xml
+          elsif File.exist?(unpublished_xml)
+            metadata_xml = unpublished_xml
+          else
+            BigBlueButton.logger.info "No metadata.xml found for meetings #{record_id}."
+            BigBlueButton.logger.info "Skipping meeting. Probably presentation didn't finish yet for this meeting."
+            next
+          end
+
+          # send to presentation_recorder the metadata xml
+          command = "ruby record/presentation_recorder.rb -m #{metadata_xml} -d #{get_free_display}"
+          record_in_progress[record_id] = BigBlueButton.execute_async(command)
+        end
     end
 
     sleep 30
