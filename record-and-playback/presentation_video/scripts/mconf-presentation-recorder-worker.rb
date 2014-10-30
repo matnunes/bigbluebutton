@@ -110,15 +110,17 @@ def record_meeting
             metadata_xml = published_xml
           elsif File.exist?(unpublished_xml)
             metadata_xml = unpublished_xml
+          end
+
+          if metadata_xml != nil
+            # send to presentation_recorder the metadata xml
+            command = "ruby record/presentation_recorder.rb -m #{metadata_xml} -d #{get_free_display}"
+            record_in_progress[record_id] = BigBlueButton.execute_async(command)
           else
             BigBlueButton.logger.info "No metadata.xml found for meetings #{record_id}."
             BigBlueButton.logger.info "Skipping meeting. Probably presentation didn't finish yet for this meeting."
-            next
+            #next
           end
-
-          # send to presentation_recorder the metadata xml
-          command = "ruby record/presentation_recorder.rb -m #{metadata_xml} -d #{get_free_display}"
-          record_in_progress[record_id] = BigBlueButton.execute_async(command)
         end
     end
 
