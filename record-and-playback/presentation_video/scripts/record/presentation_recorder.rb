@@ -112,11 +112,16 @@ if not FileTest.directory?(process_done)
 
     BigBlueButton.logger.info("presentation_recorder done!")
   rescue Exception => e
-    BigBlueButton.logger.error "Something went wrong on the record method: #{e.to_s}"
 
-    BigBlueButton.logger.error "Creating error file for meeting #{meeting_id}"
-    process_error = File.new("#{$recording_dir}/status/published/#{meeting_id}-presentation_recorder.fail", "w")
-    process_error.write("Error processing #{meeting_id}")
-    process_error.close
+    if e.to_s.eql? "SIGTERM"
+      BigBlueButton.logger.error "Received SIGTERM signal. Recording terminated!"
+    else
+      BigBlueButton.logger.error "Something went wrong on the record method: #{e.to_s}"
+
+      BigBlueButton.logger.error "Creating error file for meeting #{meeting_id}"
+      process_error = File.new("#{$recording_dir}/status/published/#{meeting_id}-presentation_recorder.fail", "w")
+      process_error.write("Error processing #{meeting_id}")
+      process_error.close
+    end
   end
 end
