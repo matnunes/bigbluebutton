@@ -84,6 +84,9 @@ def record_meeting
       fail_file = "/var/bigbluebutton/recording/status/published/#{k}-presentation_recorder.fail"
       BigBlueButton.logger.info "Error file #{fail_file}"
       FileUtils.rm fail_file
+
+      done_file = "/var/bigbluebutton/recording/status/published/#{k}-presentation_recorder.done"
+      FileUtils.rm done_file if File.exists?(done_file)
     end
 
     meetings_to_record = all_meetings - recorded_meetings - record_in_progress.keys
@@ -97,6 +100,7 @@ def record_meeting
 
     if not meetings_to_record.empty?
 
+        # Flag used to avoid multiple recordings to be started simultaneously, which leads to black-screen recording
         record_started = false
 
         meetings_to_record.each do |record_id|          
