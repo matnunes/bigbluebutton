@@ -105,7 +105,7 @@ def record_meeting
 
         meetings_to_record.each do |record_id|          
           if !record_started
-            BigBlueButton.logger.info "Will try to process meeting: #{record_id}"
+            BigBlueButton.logger.info "Trying to process meeting: #{record_id}"
             if record_in_progress.count >= $props['simultaneous_meetings']
               BigBlueButton.logger.info "Maximum number of simmultaneous meetings reached!"
             else

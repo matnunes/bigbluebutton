@@ -15,7 +15,7 @@ firefox_profile: /tmp/firefox_presentation_video/new_profile/
 display_settings: 1600x900x24
 firefox_width: 1600
 firefox_height: 900
-firefox_safemode_wait: 10
+firefox_safemode_wait: 20
 firefox_load_wait: 20
 xvfb_wait: 10
 play_button_x_position: 292

@@ -56,7 +56,8 @@ def presentation_video_restart(meeting_id)
   published_presentation_video = "#{$published_dir}/presentation_video/#{meeting_id}"
   unpublished_presentation_video = "#{$unpublished_dir}/presentation_video/#{meeting_id}"
 
-  BigBlueButton.logger.info "Deleting published and unpublished folder of presentation_video for meeting #{meeting_id}"
+  BigBlueButton.logger.info "Marking to restart presentation_video for this meeting:"
+  BigBlueButton.logger.info "-Deleting published and unpublished folder of presentation_video for meeting #{meeting_id}"
 
   if Dir.exists?(published_presentation_video)
     FileUtils.rm_rf(published_presentation_video)
@@ -71,7 +72,7 @@ def presentation_video_restart(meeting_id)
   process_presentation_video_fail = "#{$recording_dir}/status/processed/#{meeting_id}-presentation_video.fail"
   publish_presentation_video_fail = "#{$recording_dir}/status/published/#{meeting_id}-presentation_video.fail"
 
-  BigBlueButton.logger.info "Deleting done and fail status files of presentation_video for meeting #{meeting_id}"
+  BigBlueButton.logger.info "-Deleting done and fail status files of presentation_video for meeting #{meeting_id}"
 
   if FileTest.file?(process_presentation_video_done)
     FileUtils.rm("#{process_presentation_video_done}")
@@ -87,7 +88,7 @@ def presentation_video_restart(meeting_id)
   end
 
   # Restart presentation_video from archived
-  BigBlueButton.logger.info "Recreating archived and presentation process done files"
+  BigBlueButton.logger.info "-Recreating archived and presentation process done files"
 
   archived_done = File.new("#{$recording_dir}/status/archived/#{meeting_id}.done", "w")
   process_presentation_done = File.new("#{$recording_dir}/status/processed/#{meeting_id}-presentation.done", "w")
