@@ -25,6 +25,8 @@ require 'trollop'
 require 'yaml'
 require 'uri'
 
+# Rap-worker generates the .fail file in case that this script dont generate the required .done
+
 opts = Trollop::options do
   opt :meeting_id, "Meeting id to archive", :default => '58f4a6b3-cd07-444d-8564-59116cb53974', :type => String
 end
@@ -51,90 +53,76 @@ BigBlueButton.logger = Logger.new("#{log_dir}/presentation_video/process-#{meeti
 target_dir = "#{recording_dir}/process/presentation_video/#{meeting_id}"
 FileUtils.mkdir_p target_dir
 
-#process_done = "#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done"
-#BigBlueButton.logger.info "Testing if #{process_done} exists"
+recorder_done = "#{recording_dir}/status/published/#{meeting_id}-presentation_recorder.done"
+BigBlueButton.logger.info "Testing if presentation_recorder finished for meeting #{meeting_id}"
 
-# This check is probably not necessary because rap-worker already checks .done files
-# Rap-worker also generates the .fail file in case that this doesn't generates the required .done
-#if not FileTest.directory?(process_done)
-  # this recording has never been processed
-
-  recorder_done = "#{recording_dir}/status/published/#{meeting_id}-presentation_recorder.done"
-  BigBlueButton.logger.info "Testing if presentation_recorder finished for meeting #{meeting_id}"
-
-  if File.exists?(recorder_done)
-    
-    # Check if publish of presentation_video failed and force it to be restarted after process is done.
-    published_fail = "#{recording_dir}/status/published/#{meeting_id}-presentation_video.fail"    
-    if File.exists?(published_fail)
-      FileUtils.rm(published_fail)
-    end
-
-    # the video was recorded, now it's time to prepare everything
-    presentation_recorder_meeting_dir = "#{presentation_recorder_dir}/#{meeting_id}"
-    recorded_screen_raw_file = "#{presentation_recorder_meeting_dir}/recorded_screen_raw.webm"
-
-    FileUtils.cp_r "#{presentation_recorder_meeting_dir}/metadata.xml", "#{target_dir}/metadata.xml"
-    FileUtils.cp_r "#{recorded_screen_raw_file}", "#{target_dir}/"
-
-    metadata = "#{target_dir}/metadata.xml"
-    BigBlueButton.logger.info "Parsing metadata on #{metadata}"
-    doc = nil
-    begin
-      doc = Nokogiri::XML(open(metadata).read)
-    rescue Exception => e
-      BigBlueButton.logger.error "Something went wrong: #{$!}"
-      raise e
-    end
-
-    #duration = doc.xpath('//recording/playback/duration').text
-    link = doc.xpath('//recording/playback/link').text
-    uri = URI.parse(link)
-    file_repo = "#{uri.scheme}://#{uri.host}/presentation/#{meeting_id}"
-
-    BigBlueButton.try_download "#{file_repo}/video/webcams.webm", "#{target_dir}/webcams.webm"
-    BigBlueButton.try_download "#{file_repo}/audio/audio.webm", "#{target_dir}/audio.webm"
-
-    audio_file = nil
-    if File.exist?("#{target_dir}/webcams.webm")
-      audio_file = "#{target_dir}/webcams.webm"
-    elsif File.exist?("#{target_dir}/audio.webm")
-      audio_file = "#{target_dir}/audio.webm"
-    else
-      BigBlueButton.logger.error "Couldn't locate an audio file on published presentation"
-      raise "NoAudioFile"
-    end
-
-    format = {
-      :extension => 'webm',
-      :parameters => [
-        [ '-c:v', 'libvpx', '-crf', '34', '-b:v', '60M',
-        '-threads', '2', '-deadline', 'good', '-cpu-used', '3',
-        '-c:a', 'copy', '-b:a', '32K',
-        '-f', 'webm' ]
-      ]
-    }
-
-    video_before_mkclean = "#{target_dir}/before_mkclean"
-    converted_video_file = "#{target_dir}/video"
-    BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, video_before_mkclean, 0)
-
-    command = "mkclean --quiet #{video_before_mkclean}.#{format[:extension]} #{converted_video_file}.#{format[:extension]}"
-    BigBlueButton.logger.info command
-    BigBlueButton.execute command
-
-    BigBlueButton.logger.info "Mkclean done"
-
-    BigBlueButton.logger.info "Deleting #{presentation_recorder_meeting_dir}/*"
-
-    #FileUtils.rm recorder_done
-    #FileUtils.rm_r(Dir.glob("#{presentation_recorder_meeting_dir}/*"))
-
-    process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
-    process_done.write("Processed #{meeting_id}")
-    process_done.close
-
-    BigBlueButton.logger.info "Process done!"
+if File.exists?(recorder_done)
+  
+  # Check if publish of presentation_video failed and force it to be restarted after process is done.
+  published_fail = "#{recording_dir}/status/published/#{meeting_id}-presentation_video.fail"    
+  if File.exists?(published_fail)
+    FileUtils.rm(published_fail)
   end
-#end
 
+  # The video was recorded, now it's time to prepare everything
+  presentation_recorder_meeting_dir = "#{presentation_recorder_dir}/#{meeting_id}"
+  recorded_screen_raw_file = "#{presentation_recorder_meeting_dir}/recorded_screen_raw.webm"
+
+  FileUtils.cp_r "#{presentation_recorder_meeting_dir}/metadata.xml", "#{target_dir}/metadata.xml"
+  FileUtils.cp_r "#{recorded_screen_raw_file}", "#{target_dir}/"
+
+  metadata = "#{target_dir}/metadata.xml"
+  BigBlueButton.logger.info "Parsing metadata on #{metadata}"
+  doc = nil
+  begin
+    doc = Nokogiri::XML(open(metadata).read)
+  rescue Exception => e
+    BigBlueButton.logger.error "Something went wrong: #{$!}"
+    raise e
+  end
+
+  link = doc.xpath('//recording/playback/link').text
+  uri = URI.parse(link)
+  file_repo = "#{uri.scheme}://#{uri.host}/presentation/#{meeting_id}"
+
+  BigBlueButton.try_download "#{file_repo}/video/webcams.webm", "#{target_dir}/webcams.webm"
+  BigBlueButton.try_download "#{file_repo}/audio/audio.webm", "#{target_dir}/audio.webm"
+
+  audio_file = nil
+  if File.exist?("#{target_dir}/webcams.webm")
+    audio_file = "#{target_dir}/webcams.webm"
+  elsif File.exist?("#{target_dir}/audio.webm")
+    audio_file = "#{target_dir}/audio.webm"
+  else
+    BigBlueButton.logger.error "Couldn't locate an audio file on published presentation"
+    raise "NoAudioFile"
+  end
+
+  format = {
+    :extension => 'webm',
+    :parameters => [
+      [ '-c:v', 'libvpx', '-crf', '34', '-b:v', '60M',
+      '-threads', '2', '-deadline', 'good', '-cpu-used', '3',
+      '-c:a', 'copy', '-b:a', '32K',
+      '-f', 'webm' ]
+    ]
+  }
+
+  video_before_mkclean = "#{target_dir}/before_mkclean"
+  converted_video_file = "#{target_dir}/video"
+  BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, video_before_mkclean, 0)
+
+  command = "mkclean --quiet #{video_before_mkclean}.#{format[:extension]} #{converted_video_file}.#{format[:extension]}"
+  BigBlueButton.logger.info command
+  BigBlueButton.execute command
+
+  BigBlueButton.logger.info "Mkclean done"
+
+  BigBlueButton.logger.info "Deleting #{presentation_recorder_meeting_dir}/*"
+
+  process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
+  process_done.write("Processed #{meeting_id}")
+  process_done.close
+
+  BigBlueButton.logger.info "Process done!"
+end

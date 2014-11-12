@@ -38,31 +38,28 @@ puts $meeting_id
 puts $playback
 
 if ($playback == "presentation_video")
-  logger = Logger.new("/var/log/bigbluebutton/presentation_video/publish-#{$meeting_id}.log", 'daily' )
-  BigBlueButton.logger = logger
-  # This script lives in scripts/archive/steps while properties.yaml lives in scripts/
+  BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_video/publish-#{$meeting_id}.log", 'daily' )
 
+  BigBlueButton.logger.info("Starting publish of presentation_video for meeting #{$meeting_id}")
+
+  # This script lives in scripts/archive/steps while properties.yaml lives in scripts/
   bbb_props = YAML::load(File.open('../../core/scripts/bigbluebutton.yml'))
-  simple_props = YAML::load(File.open('presentation_video.yml'))
-  BigBlueButton.logger.info("Setting recording dir")
   recording_dir = bbb_props['recording_dir']
-  BigBlueButton.logger.info("Setting process dir")
-  process_dir = "#{recording_dir}/process/presentation_video/#{$meeting_id}"
-  BigBlueButton.logger.info("setting publish dir")
-  publish_dir = simple_props['publish_dir']
-  BigBlueButton.logger.info("setting playback host")
   playback_host = bbb_props['playback_host']
-  BigBlueButton.logger.info("setting target dir")
-  target_dir = "#{recording_dir}/publish/presentation_video/#{$meeting_id}"
+
+  presentation_video_props = YAML::load(File.open('presentation_video.yml'))
+  publish_dir = presentation_video_props['publish_dir']
 
   raw_archive_dir = "#{recording_dir}/raw/#{$meeting_id}"
+  process_dir = "#{recording_dir}/process/presentation_video/#{$meeting_id}"  
+  target_dir = "#{recording_dir}/publish/presentation_video/#{$meeting_id}"
 
   if not FileTest.directory?(target_dir)
-    BigBlueButton.logger.info("Making dir #{target_dir}")
+    BigBlueButton.logger.info("Creating target dir #{target_dir}")
     FileUtils.mkdir_p target_dir
 
     metadata_xml = "#{process_dir}/metadata.xml"
-    BigBlueButton.logger.info "Parsing metadata on #{metadata_xml}"
+    BigBlueButton.logger.info "Parsing #{metadata_xml}"
     doc = nil
     begin
       doc = Nokogiri::XML(open(metadata_xml).read)
@@ -76,10 +73,10 @@ if ($playback == "presentation_video")
     doc.at("link").content = "http://#{playback_host}/presentation_video/#{$meeting_id}/video.webm"
 
     package_dir = "#{target_dir}/#{$meeting_id}"
-    BigBlueButton.logger.info("Making dir #{package_dir}")
+    BigBlueButton.logger.info("Creating package dir #{package_dir}")
     FileUtils.mkdir_p package_dir
 
-    BigBlueButton.logger.info("Creating metadata.xml")
+    BigBlueButton.logger.info("Creating metadata.xml on package dir")
     
     metadata_xml = File.new("#{package_dir}/metadata.xml","w")
     metadata_xml.write(doc.to_xml(:indent => 2))
@@ -110,18 +107,22 @@ if ($playback == "presentation_video")
     if not FileTest.directory?(publish_dir)
       FileUtils.mkdir_p publish_dir
     end
-    FileUtils.cp_r(package_dir, publish_dir) # Copy all the files.
-    BigBlueButton.logger.info("Finished publishing script presentation_video.rb successfully.")
+    
+    # Copy all the files.
+    BigBlueButton.logger.info("Copying files from package dir to publish dir.")    
+    FileUtils.cp_r(package_dir, publish_dir)
 
     BigBlueButton.logger.info("Removing processed files.")
     FileUtils.rm_r(Dir.glob("#{process_dir}/*"))
 
-    BigBlueButton.logger.info("Removing published files.")
+    BigBlueButton.logger.info("Removing target dir files.")
     FileUtils.rm_r(Dir.glob("#{target_dir}/*"))
 
     process_done = File.new("#{recording_dir}/status/published/#{$meeting_id}-presentation_video.done", "w")
     process_done.write("Processed #{$meeting_id}")
     process_done.close
+
+    BigBlueButton.logger.info("Publishing script presentation_video.rb finished successfully.")
   end
 
 end

@@ -50,8 +50,6 @@ end
 
 # This method is based on bigbluebutton-config/bin/bbb-record and its rebuild function
 def presentation_video_restart(meeting_id)
-  # Check if raw files exist (not necessary)
-
   # Delete (un)published files. It force presentation_video restart even if it was already processed
   published_presentation_video = "#{$published_dir}/presentation_video/#{meeting_id}"
   unpublished_presentation_video = "#{$unpublished_dir}/presentation_video/#{meeting_id}"
@@ -88,7 +86,7 @@ def presentation_video_restart(meeting_id)
   end
 
   # Restart presentation_video from archived
-  BigBlueButton.logger.info "-Recreating archived and presentation process done files"
+  BigBlueButton.logger.info "-Recreating archived and presentation process done files for meeting #{meeting_id}"
 
   archived_done = File.new("#{$recording_dir}/status/archived/#{meeting_id}.done", "w")
   process_presentation_done = File.new("#{$recording_dir}/status/processed/#{meeting_id}-presentation.done", "w")
@@ -109,11 +107,14 @@ if not FileTest.directory?(process_done)
   begin
     video_recorder.record(metadata_xml, display_id)
 
+    # After recording the meeting, we force the process and publish of presentation_video to restart
     presentation_video_restart(meeting_id)
 
     BigBlueButton.logger.info("presentation_recorder done!")
   rescue Exception => e
 
+    # Treat SIGTERM in case of a bbb-record --rebuildVideo terminating an ongoing meeting recording, avoiding it
+    # to create a .fail file
     if e.to_s.eql? "SIGTERM"
       BigBlueButton.logger.error "Received SIGTERM signal. Recording terminated!"
     else

@@ -64,6 +64,8 @@ def record_meeting
   presentation_recorder_dir = $props['presentation_recorder_dir']
   presentation_video_status_dir = $props['presentation_video_status_dir']
 
+  status_dir = "/var/bigbluebutton/recording/status"
+
   record_in_progress = Hash[(Dir.entries("#{presentation_recorder_dir}") - ['.', '..']).map {|v| [v, nil]}]
 
   while true
@@ -71,21 +73,21 @@ def record_meeting
 
     all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/,'')}
     
-    recorded_meetings = Dir.glob("/var/bigbluebutton/recording/status/published/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
+    recorded_meetings = Dir.glob("#{status_dir}/published/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
     recorded_meetings.each do |k|
       BigBlueButton.wait record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k
     end
 
-    failed_meetings = Dir.glob("/var/bigbluebutton/recording/status/published/*-presentation_recorder.fail").map {|v| File.basename(v).sub(/-presentation_recorder.fail/, '')}
+    failed_meetings = Dir.glob("#{status_dir}/published/*-presentation_recorder.fail").map {|v| File.basename(v).sub(/-presentation_recorder.fail/, '')}
     failed_meetings.each do |k|
       BigBlueButton.kill record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k
-      fail_file = "/var/bigbluebutton/recording/status/published/#{k}-presentation_recorder.fail"
+      fail_file = "#{status_dir}/published/#{k}-presentation_recorder.fail"
       BigBlueButton.logger.info "Error file #{fail_file}"
       FileUtils.rm fail_file
 
-      done_file = "/var/bigbluebutton/recording/status/published/#{k}-presentation_recorder.done"
+      done_file = "#{status_dir}/published/#{k}-presentation_recorder.done"
       FileUtils.rm done_file if File.exists?(done_file)
     end
 
@@ -133,13 +135,14 @@ def record_meeting
         end
     end
 
-    sleep 30
+    sleep $props['worker_sleep_time']
   end
 end
 
 if not Dir.exists?("#{$props['presentation_recorder_dir']}")
     BigBlueButton.logger.info("Presentation recorder dir #{$props['presentation_recorder_dir']} does not exists")
     FileUtils.mkdir_p("#{$props['presentation_recorder_dir']}")
+    BigBlueButton.logger.info("Dir #{$props['presentation_recorder_dir']} created")
 end
 
 record_meeting
