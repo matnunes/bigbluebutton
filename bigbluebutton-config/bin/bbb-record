@@ -66,7 +66,7 @@ mark_for_rebuild() {
         # Remove the existing 'published' recording files
         rm -rvf /var/bigbluebutton/published/$type/$MEETING_ID
         rm -rvf /var/bigbluebutton/unpublished/$type/$MEETING_ID
-
+        
         # Clear out all the done files
         rm -vf $STATUS/published/$MEETING_ID-$type.fail
         rm -vf $STATUS/published/$MEETING_ID-$type.done
@@ -119,6 +119,39 @@ mark_for_republish() {
     done
 }
 
+delete_video() {
+    MEETING_ID=$1
+
+    echo "deleting video: $MEETING_ID"
+    
+    if [ ! -f $STATUS/presentation_video/$MEETING_ID.done ]; then
+        echo "No presentation_video call for meeting $MEETING_ID"   
+        exit    
+    fi
+    
+    # Check if meeting video finished, otherwise generate fail file to make recorder-worker stop recording
+#   if [ -f "$STATUS/published/$MEETING_ID-presentation_recorder.done" ]; then
+        rm -vf $STATUS/published/$MEETING_ID-presentation_recorder.done
+#   else
+        touch $STATUS/published/$MEETING_ID-presentation_recorder.fail  
+#   fi
+
+    rm -vf $STATUS/presentation_video/$MEETING_ID.done  
+       
+    # Remove the existing 'process' recording files
+        rm -rvf /var/bigbluebutton/recording/process/presentation_recorder/$MEETING_ID
+        rm -rvf /var/bigbluebutton/recording/publish/presentation_recorder/$MEETING_ID
+
+    # Remove the existing presentation_video files
+    rm -rvf /var/bigbluebutton/recording/process/presentation_video/$MEETING_ID
+    rm -rvf /var/bigbluebutton/recording/publish/presentation_video/$MEETING_ID
+    rm -rvf /var/bigbluebutton/published/presentation_video/$MEETING_ID
+
+        # Clear out done files
+        rm -vf $STATUS/published/$MEETING_ID-presentation_recorder.done
+        rm -vf $STATUS/processed/$MEETING_ID-presentation_recorder.done
+}
+
 need_root() {
         if [ $EUID != 0 ]; then
                 echo "Need to be root to run this option"
@@ -151,7 +184,9 @@ usage() {
         echo "   --rebuildall                   rebuild every recording"
         echo "   --rebuildallVideo              rebuild video for every recording"
     echo "   --delete <internal meetingID>  delete one meeting and recording"
+    echo "   --deleteVideo <internal meetingID> delete video of one meeting and recording"
         echo "   --deleteall                        delete all meetings and recordings"
+    echo "   --deleteallVideo           delete video of all meetings and recordings"
         echo "   --debug                            check for recording errors"
         echo "   --check                            check for configuration errors"
         echo "   --enable <workflow>                enable a recording workflow"
@@ -256,12 +291,31 @@ while [ $# -gt 0 ]; do
                 continue
         fi
 
+    if [ "$1" = "-deleteVideo" -o "$1" = "--deleteVideo" ]; then
+                need_root
+                if [ ! -z "${2}" ]; then
+                        MEETING_ID="${2}"
+                        shift
+                fi
+                DELETE_VIDEO=1
+                shift
+                continue
+        fi
+
         if [ "$1" = "-deleteall" -o "$1" = "--deleteall" ]; then
         need_root
                 DELETEALL=1
         shift
                 continue
         fi
+
+        if [ "$1" = "-deleteallVideo" -o "$1" = "--deleteallVideo" ]; then
+        need_root
+                DELETEALL_VIDEO=1
+        shift
+                continue
+        fi
+
         if [ "$1" = "-check" -o "$1" = "--check" ]; then
         need_root
                 CHECK=1
@@ -327,16 +381,16 @@ while [ $# -gt 0 ]; do
                 continue
         fi
 
-#   if [ "$1" = "-rearchive" -o "$1" = "--rearchive" ]; then
-#                need_root
-#                if [ ! -z "${2}" ]; then
-#                        MEETING_ID="${2}"
-#                        shift
-#                fi
-#                REARCHIVE=1
-#                shift
-#                continue
-#        fi
+    #   if [ "$1" = "-rearchive" -o "$1" = "--rearchive" ]; then
+    #                need_root
+    #                if [ ! -z "${2}" ]; then
+    #                        MEETING_ID="${2}"
+    #                        shift
+    #                fi
+    #                REARCHIVE=1
+    #                shift
+    #                continue
+    #        fi
 
     usage
     exit 1
@@ -366,19 +420,19 @@ if [ $REBUILDALL ]; then
 fi 
 
 if [ $REBUILDALL_VIDEO ]; then
-    echo "Rebuilding presentation_video of all recordings"
+  echo "Rebuilding presentation_video of all recordings"
 
-    sudo /etc/init.d/mconf-presentation-recorder stop
+  sudo /etc/init.d/mconf-presentation-recorder stop
 
-    # Get done files
-    recordings=$(find $STATUS/presentation_video/ -iregex '.*\(done\)' -printf '%f\n')    
-    for recording in $recordings; do
-        # Remove extension
-        rec=$(echo "${recording%.*}")
-        mark_for_rebuild_video $rec
-    done
+  # Get done files
+  recordings=$(find $STATUS/presentation_video/ -iregex '.*\(done\)' -printf '%f\n')    
+  for recording in $recordings; do
+    # Remove extension
+    rec=$(echo "${recording%.*}")
+    mark_for_rebuild_video $rec
+  done
 
-    sudo /etc/init.d/mconf-presentation-recorder start
+  sudo /etc/init.d/mconf-presentation-recorder start
 fi 
 
 if [ $REPUBLISH ]; then
@@ -446,6 +500,25 @@ if [ $DELETE ]; then
 
   # Remove presentation_recorder log
   rm -rf /var/log/bigbluebutton/presentation_recorder/*$MEETING_ID*
+fi
+
+if [ $DELETE_VIDEO ]; then
+  if [[ -z $MEETING_ID ]]; then
+    echo "No meeting id given"
+    exit 1
+  fi
+
+  delete_video $MEETING_ID
+fi
+
+if [ $DELETEALL_VIDEO ]; then
+  # Get done files
+  recordings=$(find $STATUS/presentation_video/ -iregex '.*\(done\)' -printf '%f\n')    
+  for recording in $recordings; do
+    # Remove extension
+    rec=$(echo "${recording%.*}")
+    delete_video $rec
+  done
 fi
 
 if [ $DELETEALL ]; then
