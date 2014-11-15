@@ -55,6 +55,8 @@ package org.bigbluebutton.modules.deskshare.services
 			this.uri = uri;
       this.room = room;
 			trace("Deskshare Service connecting to " + uri);
+			LogUtil.debug("-----------------Deskshare Service connecting to URI: " + uri);
+			LogUtil.debug("-----------------Deskshare Service connecting to ROOM: " + room);
 			conn = new Connection(room);
 
 			conn.setURI(uri);
@@ -80,6 +82,7 @@ package org.bigbluebutton.modules.deskshare.services
     
     public function stopSharingDesktop(meetingId: String, stream: String):void {
       conn.stopSharingDesktop(meetingId, stream);
+      conn.disconnect();
     }
     
 	}

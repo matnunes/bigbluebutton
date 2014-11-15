@@ -19,6 +19,7 @@
 package org.bigbluebutton.deskshare.server.red5
 
 import org.red5.server.api.{IContext, IConnection}
+import org.red5.server.api.stream.IBroadcastStream
 import org.red5.server.so.SharedObjectService
 import org.red5.server.api.so.{ISharedObject, ISharedObjectService}
 import org.red5.server.stream.IProviderService
@@ -47,6 +48,7 @@ class DeskshareApplication(streamManager: StreamManager, deskShareServer: DeskSh
  
 	override def appStart(app: IScope): Boolean = {
 		logger.debug("deskShare appStart");
+		logger.debug("-----DeskshareApplication")
 		appScope = app
 		super.setScope(appScope)
 		if (appScope == null) println ("APSCOPE IS NULL!!!!")
@@ -172,6 +174,7 @@ class DeskshareApplication(streamManager: StreamManager, deskShareServer: DeskSh
 	    	   case None => logger.error("Failed to get shared object for room %s",name)
 	    	   case Some(deskSO) => {
 	    	     logger.debug("DeskshareApplication: Creating Broadcast Stream for room [ %s ]", name)
+				 logger.debug("-----DeskshareApplication: streamManager.createOBSStream [ %s ]", name)
 	    		   return createBroadcastStream(name, appScope)
 	    	   }
 	    	 }
@@ -206,4 +209,38 @@ class DeskshareApplication(streamManager: StreamManager, deskShareServer: DeskSh
     
 	   return Some(broadcastStream)
 	}
+
+	override def streamBroadcastStart(stream:IBroadcastStream) {
+		var rScope:IScope  = ScopeUtils.resolveScope(appScope, stream.getPublishedName())
+		var pubName:String = stream.getPublishedName() 
+
+	    //recebeu uma stream
+	    logger.debug("==============> new stream being published [ %s ]", pubName)
+
+		super.streamBroadcastStart(stream)
+		createBroadcastStream(pubName, rScope)
+		streamManager.createStream(pubName, 800, 600)
+    }
+    
+    override def streamBroadcastClose(stream:IBroadcastStream) {
+    	var pubName:String = stream.getPublishedName() 
+		logger.debug("==============> stream being closed [ %s ]", pubName)
+
+    	super.streamBroadcastClose(stream)
+
+    	streamManager.destroyStream(pubName)
+
+    	deskShareServer.stop();
+		super.appStop(appScope)
+
+		// var conn:IConnection = Red5.getConnectionLocal();
+  //       var scopeName:String = "";
+  //       if (conn != null) {
+  // 	       scopeName = conn.getScope().getName();
+  //       } else {
+  // 	       log.info("Connection local was null, using scope name from the stream: {}", stream);
+  // 	       scopeName = stream.getScope().getName();
+  //       }
+	}
+
 }

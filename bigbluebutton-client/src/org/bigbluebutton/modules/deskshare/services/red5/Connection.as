@@ -289,6 +289,7 @@ package org.bigbluebutton.modules.deskshare.services.red5
      * 
      */		
     public function appletStarted(videoWidth:Number, videoHeight:Number):void{
+      LogUtil.debug("------Got applet started");  //faz a exibição do vídeo na janela do cliente
       trace(LOG + "Got applet started");
       var event:AppletStartedEvent = new AppletStartedEvent();
       event.videoWidth = videoWidth;
@@ -309,6 +310,7 @@ package org.bigbluebutton.modules.deskshare.services.red5
     }
     
     public function sendStartedViewingNotification(stream:String):void{
+      LogUtil.debug("-----Sending start viewing to server");  //cliente ao abrir o stream envia esta notificação
       trace(LOG + "Sending start viewing to server");
       nc.call("deskshare.startedToViewStream", null, stream);
     }
@@ -342,6 +344,7 @@ package org.bigbluebutton.modules.deskshare.services.red5
       } catch(e:Error){
         trace(LOG + "could not send stop viewing notification");
       }
+      LogUtil.debug("===========> Sending stop viewing notification to other clients.");
     }
     
     /**

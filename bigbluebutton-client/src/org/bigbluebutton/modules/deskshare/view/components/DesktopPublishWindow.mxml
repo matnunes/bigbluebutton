@@ -63,7 +63,9 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
       import org.bigbluebutton.main.views.MainCanvas;
       import org.bigbluebutton.modules.deskshare.events.AppletStartedEvent;
       import org.bigbluebutton.modules.deskshare.events.CursorEvent;
+      import org.bigbluebutton.modules.deskshare.events.ShareEvent;
       import org.bigbluebutton.modules.deskshare.events.ShareWindowEvent;
+      import org.bigbluebutton.modules.deskshare.events.StartedViewingEvent;
       import org.bigbluebutton.modules.deskshare.events.StopSharingButtonEvent;
       import org.bigbluebutton.modules.deskshare.events.StreamEvent;
       import org.bigbluebutton.modules.deskshare.events.ViewStreamEvent;
@@ -178,7 +180,13 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				var captureY:Number = 0;				
 				sharingFullScreen = fullScreen;
 				LogUtil.debug("Calling startApplet");
-				ExternalInterface.call("startApplet", uri, room, fullScreen, true /*useSVC2Check.selected*/);
+				//abort calling deskshare applet (desktop sharing will be handled by OBS)
+				//ExternalInterface.call("startApplet", uri, room, fullScreen, true /*useSVC2Check.selected*/);
+				startPreviewStream(connection, room, 800, 600);
+				var streamEvent:StreamEvent = new StreamEvent(StreamEvent.START);
+				streamEvent.videoWidth = 800;
+				streamEvent.videoHeight = 600;
+				dispatchEvent(streamEvent);
 			}
 			
 			public function stopSharing():void{

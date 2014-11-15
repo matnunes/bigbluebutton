@@ -70,7 +70,8 @@ package org.bigbluebutton.modules.deskshare.managers
 			LogUtil.debug("ViewerWindowManager::startViewing");
 			viewWindow = new DesktopViewWindow();
 			viewWindow.startVideo(service.getConnection(), room, videoWidth, videoHeight);
-			
+			LogUtil.debug("ViewerWindowManager::startViewing--------PARAMETROS:"+room);		
+						
 			openWindow(viewWindow);
 			isViewing = true;
 		}
