@@ -130,14 +130,15 @@ if not FileTest.directory?(target_dir)
     BigBlueButton.process_multiple_videos(target_dir, temp_dir, meeting_id, width, height, presentation_props['audio_offset'], presentation_props['include_deskshare'])
     BigBlueButton.logger.info "Video recorded"  
 
-    # Create video without deskshare
+    # Create also a video without deskshare, for meetings with deskshare
     if include_deskshare
       width = presentation_props['video_output_width']
       height = presentation_props['video_output_height']
       no_deskshare_video_dir = "#{target_dir}/no_deskshare"
       FileUtils.mkdir_p no_deskshare_video_dir
-      BigBlueButton.process_multiple_videos(no_deskshare_video_dir, temp_dir, meeting_id, width, height, presentation_props['audio_offset'], false)
-      BigBlueButton.logger.info "Video without deskshare recorded"      
+      BigBlueButton.process_multiple_videos(no_deskshare_video_dir, temp_dir, meeting_id, width, height, presentation_props['audio_offset'], false)      
+      FileUtils.mv "#{no_deskshare_video_dir}/webcams.webm", "#{no_deskshare_video_dir}/webcams_no_deskshare.webm"
+      BigBlueButton.logger.info "Video without deskshare recorded"     
     end
   end
 
