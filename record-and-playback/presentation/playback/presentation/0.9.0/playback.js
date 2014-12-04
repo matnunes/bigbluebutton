@@ -327,7 +327,7 @@ load_video = function(){
 
    var webmsource = document.createElement("source");
 
-   if (INCLUDE_DESKSHARE == "false") {
+   if (INCLUDE_DESKSHARE == "false" && checkUrl(RECORDINGS + '/video/webcams_no_deskshare.webm') == true) {
       webmsource.setAttribute('src', RECORDINGS + '/video/webcams_no_deskshare.webm');
    } else {
       webmsource.setAttribute('src', RECORDINGS + '/video/webcams.webm');
