@@ -47,31 +47,39 @@ module BigBlueButton
 				BigBlueButton.logger.info "No duration field at metadata.xml. Will extract video time from audio.webm or webcams.webm"
 
 				uri = URI.parse(link)
-			    file_repo = "#{uri.scheme}://#{uri.host}/presentation/#{record_id}"
+		    file_repo = "#{uri.scheme}://#{uri.host}/presentation/#{record_id}"
 
 				BigBlueButton.try_download "#{file_repo}/video/webcams.webm", "#{@target_dir}/webcams.webm"
-			    BigBlueButton.try_download "#{file_repo}/audio/audio.webm", "#{@target_dir}/audio.webm"
+				BigBlueButton.try_download "#{file_repo}/video/webcams_no_deskshare.webm", "#{@target_dir}/webcams_no_deskshare.webm"
+		    BigBlueButton.try_download "#{file_repo}/audio/audio.webm", "#{@target_dir}/audio.webm"
 
-			    audio_file = nil
-			    if File.exist?("#{@target_dir}/webcams.webm")
-			      audio_file = "#{@target_dir}/webcams.webm"
-			    elsif File.exist?("#{@target_dir}/audio.webm")
-			      audio_file = "#{@target_dir}/audio.webm"
-			    else
-			      BigBlueButton.logger.error "Couldn't locate an audio file on published presentation"
-			      raise "NoAudioFile"
-			    end	
+		    audio_file = nil
+		    if File.exist?("#{@target_dir}/webcams_no_deskshare.webm")
+		      audio_file = "#{@target_dir}/webcams_no_deskshare.webm"
+		    elsif File.exist?("#{@target_dir}/webcams.webm")
+		      audio_file = "#{@target_dir}/webcams.webm"
+		    elsif File.exist?("#{@target_dir}/audio.webm")
+		      audio_file = "#{@target_dir}/audio.webm"
+		    else
+		      BigBlueButton.logger.error "Couldn't locate an audio file on published presentation"
+		      raise "NoAudioFile"
+		    end	
 
-			    BigBlueButton.logger.info "Will extract audio lenght from #{audio_file}"
-			    FFMPEG.ffmpeg_binary = "/usr/local/bin/ffmpeg"
-			    BigBlueButton.logger.info "Setting FFMPEG path to #{FFMPEG.ffmpeg_binary}"
-			    # Must transform to ms
-			    duration = "#{BigBlueButton.get_video_duration(audio_file)}".to_f * 1000
-			    BigBlueButton.logger.info "Extracted duration: #{duration}"
+		    BigBlueButton.logger.info "Will extract audio lenght from #{audio_file}"
+		    FFMPEG.ffmpeg_binary = "/usr/local/bin/ffmpeg"
+		    BigBlueButton.logger.info "Setting FFMPEG path to #{FFMPEG.ffmpeg_binary}"
+		    # Must transform to ms
+		    duration = "#{BigBlueButton.get_video_duration(audio_file)}".to_f * 1000
+		    BigBlueButton.logger.info "Extracted duration: #{duration}"
 
-			    BigBlueButton.logger.info "Deleting #{audio_file}"
-			    FileUtils.rm_rf audio_file			    
+		    BigBlueButton.logger.info "Deleting #{audio_file}"
+		    FileUtils.rm_rf audio_file			    
 			end			
+
+			# For our new format, we don't include the deskshare in the webcams video part.
+			# We need the '\' to add the URL parameter, otherwise the terminal won't include
+			# the new parameter.
+			link = link + "\\&includeDeskshare=false"
 
 			BigBlueButton.logger.info "record_id: #{record_id}"
 			BigBlueButton.logger.info "format   : #{format}"
