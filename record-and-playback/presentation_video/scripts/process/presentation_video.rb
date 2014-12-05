@@ -57,7 +57,7 @@ recorder_done = "#{recording_dir}/status/published/#{meeting_id}-presentation_re
 BigBlueButton.logger.info "Testing if presentation_recorder finished for meeting #{meeting_id}"
 
 if File.exists?(recorder_done)
-  
+
   # Check if publish of presentation_video failed and force it to be restarted after process is done.
   published_fail = "#{recording_dir}/status/published/#{meeting_id}-presentation_video.fail"    
   if File.exists?(published_fail)
@@ -85,11 +85,18 @@ if File.exists?(recorder_done)
   uri = URI.parse(link)
   file_repo = "#{uri.scheme}://#{uri.host}/presentation/#{meeting_id}"
 
-  BigBlueButton.try_download "#{file_repo}/video/webcams.webm", "#{target_dir}/webcams.webm"
+  BigBlueButton.try_download "#{file_repo}/video/webcams_no_deskshare.webm", "#{target_dir}/webcams_no_deskshare.webm"
+  
+  if !File.exists?("#{target_dir}/webcams_no_deskshare.webm")
+    BigBlueButton.try_download "#{file_repo}/video/webcams.webm", "#{target_dir}/webcams.webm"
+  end
   BigBlueButton.try_download "#{file_repo}/audio/audio.webm", "#{target_dir}/audio.webm"
 
   audio_file = nil
-  if File.exist?("#{target_dir}/webcams.webm")
+  # Does not make any difference if we take the webcams with or without deskshare. They have the same length
+  if File.exist?("#{target_dir}/webcams_no_deskshare.webm")
+    audio_file = "#{target_dir}/webcams_no_deskshare.webm"
+  elsif File.exist?("#{target_dir}/webcams.webm")
     audio_file = "#{target_dir}/webcams.webm"
   elsif File.exist?("#{target_dir}/audio.webm")
     audio_file = "#{target_dir}/audio.webm"
@@ -117,8 +124,6 @@ if File.exists?(recorder_done)
   BigBlueButton.execute command
 
   BigBlueButton.logger.info "Mkclean done"
-
-  BigBlueButton.logger.info "Deleting #{presentation_recorder_meeting_dir}/*"
 
   process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation_video.done", "w")
   process_done.write("Processed #{meeting_id}")
