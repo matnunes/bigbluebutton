@@ -18,14 +18,16 @@
 */
 package org.bigbluebutton.deskshare.server.red5
 
-import org.red5.server.api.{IContext, IConnection}
+import org.red5.server.api.{IContext, IClient, IConnection}
+import org.red5.server.api.Red5
 import org.red5.server.api.stream.IBroadcastStream
+import org.red5.server.api.stream.IStream
 import org.red5.server.so.SharedObjectService
 import org.red5.server.api.so.{ISharedObject, ISharedObjectService}
 import org.red5.server.stream.IProviderService
 import org.bigbluebutton.deskshare.server.ScreenVideoBroadcastStream
 import org.bigbluebutton.deskshare.server.RtmpClientAdapter
-import org.bigbluebutton.deskshare.server.stream.StreamManager
+import org.bigbluebutton.deskshare.server.stream._
 import org.bigbluebutton.deskshare.server.socket.DeskShareServer
 import org.bigbluebutton.deskshare.server.MultiThreadedAppAdapter
 import scala.actors.Actor
@@ -33,7 +35,9 @@ import scala.actors.Actor._
 import net.lag.configgy.Configgy
 import net.lag.logging.Logger
 import java.io.File
+import java.util.ArrayList
 import java.util.concurrent.CountDownLatch
+import java.util.Set
 import org.red5.server.api.scope.{IScope}
 import org.red5.server.util.ScopeUtils
 
@@ -45,6 +49,10 @@ class DeskshareApplication(streamManager: StreamManager, deskShareServer: DeskSh
  
 	private val logger = Logger.get 
 	var appScope: IScope = null
+	var myStream: IBroadcastStream = null
+	var rtmpCA: RtmpClientAdapter = null
+	var myDeskShareStream: DeskshareStream = null
+	var svBroadcastStream: ScreenVideoBroadcastStream = null
  
 	override def appStart(app: IScope): Boolean = {
 		logger.debug("deskShare appStart");
@@ -70,12 +78,12 @@ class DeskshareApplication(streamManager: StreamManager, deskShareServer: DeskSh
 	}
 	
 	override def appDisconnect(conn: IConnection) {
-		logger.debug("deskShare appDisconnect");
+		logger.info("DeskshareApplication appDisconnect");
 		super.appDisconnect(conn);
 	}
 	
 	override def appStop(app: IScope) {
-		logger.debug("Stopping deskshare")
+		logger.info("Stopping DeskshareApplication")
 		deskShareServer.stop();
 		super.appStop(app)
 	}
@@ -166,15 +174,15 @@ class DeskshareApplication(streamManager: StreamManager, deskShareServer: DeskSh
  	}
  	
 	def createScreenVideoBroadcastStream(name: String): Option[ScreenVideoBroadcastStream] = {
-	  logger.debug("DeskshareApplication: Creating ScreenVideoBroadcastStream")
+	  logger.info("DeskshareApplication: Creating ScreenVideoBroadcastStream")
 //	   getRoomScope(name) match {
 //	     case None => logger.error("Failed to get room scope %s", name)
 //	     case Some(roomScope) => {
 	    	 getRoomSharedObject(appScope, name) match {
 	    	   case None => logger.error("Failed to get shared object for room %s",name)
 	    	   case Some(deskSO) => {
-	    	     logger.debug("DeskshareApplication: Creating Broadcast Stream for room [ %s ]", name)
-				 logger.debug("-----DeskshareApplication: streamManager.createOBSStream [ %s ]", name)
+	    	     logger.info("DeskshareApplication: Creating Broadcast Stream for room [ %s ]", name)
+				 logger.info("-----DeskshareApplication: streamManager.createOBSStream [ %s ]", name)
 	    		   return createBroadcastStream(name, appScope)
 	    	   }
 	    	 }
@@ -210,28 +218,157 @@ class DeskshareApplication(streamManager: StreamManager, deskShareServer: DeskSh
 	   return Some(broadcastStream)
 	}
 
+	// override def streamBroadcastStart(stream:IBroadcastStream) {
+	// 	var rScope:IScope  = ScopeUtils.resolveScope(appScope, stream.getPublishedName())
+	// 	var pubName:String = stream.getPublishedName() 
+
+	// 	myStream = stream
+
+	//     //recebeu uma stream
+	//     logger.info("==============> new stream being published [ %s ]", pubName)
+
+	// 	//super.streamBroadcastStart(stream)
+	// 	//createBroadcastStream(pubName, appScope)
+	// 	streamManager.createStream(pubName, 800, 600)
+	// 	createDeskshareClient(pubName) match {
+	//     	   case None => logger.info("========> DeskshareApplication streamBroadcastStart:: Failed to get shared object for room")
+	//     	   case Some(rtmpAdp) => {
+	//     	     rtmpCA = rtmpAdp
+	//     	     rtmpCA.sendDeskshareStreamStarted(800,600)
+	//     	   }
+	//     	}
+ //    }
+
 	override def streamBroadcastStart(stream:IBroadcastStream) {
+		super.streamBroadcastStart(stream)
 		var rScope:IScope  = ScopeUtils.resolveScope(appScope, stream.getPublishedName())
 		var pubName:String = stream.getPublishedName() 
 
+		createBroadcastStream(pubName, appScope) match {
+			case  Some(svb) => svBroadcastStream = svb
+			case None => logger.info("========> DeskshareApplication createBroadcastStream: Failed to createStream [%s]", pubName)
+		}
+
+		streamManager.createStream(pubName, 960, 540) match {
+    			case Some(dStream) => myDeskShareStream = dStream
+    			case None => logger.info("========> DeskshareApplication streamBroadcastStart:: Failed to createStream [%s]", pubName)
+		}
+
+		myDeskShareStream ! StartStream
+		myStream = stream
+		//streamPublishStart(stream)
+
+		// getRoomScope(pubName) match {
+		//      case None => logger.info("DeskshareApplication: Failed to get room scope for stopIStream([ %s ]) ", pubName)
+		//      case Some(roomScope) => {
+		//      		// roomScope.getClientBroadcastStream(pubName).stop()
+	 //    			appScope.getBroadcastScope(pubName).getClientBroadcastStream().close()	
+	 //    			logger.info("-=======> DeskshareApplication: Sent close([ %s ]) ", pubName)
+		//      	}
+	 //    	}
+
 	    //recebeu uma stream
-	    logger.debug("==============> new stream being published [ %s ]", pubName)
+	    logger.info("==============> new stream being published [ %s ]", pubName)
 
-		super.streamBroadcastStart(stream)
-		createBroadcastStream(pubName, rScope)
-		streamManager.createStream(pubName, 800, 600)
+		// createBroadcastStream(pubName, appScope) createBroadcasStream chamado no DeskshareStream
+
+		// createDeskshareClient(pubName) match {
+	 //    	   case None => logger.info("========> DeskshareApplication streamBroadcastStart:: Failed to get shared object for room")
+	 //    	   case Some(rtmpAdp) => {
+	 //    	     rtmpCA = rtmpAdp
+	 //    	     rtmpCA.sendDeskshareStreamStarted(800,600)
+	 //    	   }
+	 //    	}
     }
+
+	    //stops a broadcasted stream on demand
+	  //   def stopIStream(room:String) {
+	  //   	logger.info("==============> stream being STOPPED! [ %s ]", room)
+	  //   	rtmpCA.sendDeskshareStreamStopped(new ArrayList[Object]())
+		 //   	var rScope:IScope  = appScope
+			// // val context: IContext  = rScope.getContext()
+
+	  // //   	logger.info("DeskshareApplication stopIStream: Getting provider service for room [ %s ]", room)		
+			// // val providerService: IProviderService  = context.getBean(IProviderService.BEAN_NAME).asInstanceOf[IProviderService]
+			
+			// // logger.info("DeskshareApplication stopIStream: UnRegistering broadcast stream for room [ %s ]", room)
+			// // if (providerService.unregisterBroadcastStream(rScope, room)) {
+			// // 	// Do nothing. Successfully registered a live broadcast stream. (ralam Sept. 4, 2012)
+			// // 	logger.info("DeskShareStream stopIStream: Unregister broadcast stream successfully")
+			// // } else{
+			// // 	logger.info("DeskShareStream stopIStream: Could not unregister broadcast stream")
+			// // }
+
+	  //   	//(problemas de erros de desconexão) >>
+	  //   	// getRoomScope(room) match {
+		 //    //  case None => logger.error("DeskshareApplication: Failed to get room scope for stopIStream([ %s ]) ", room)
+		 //    //  case Some(roomScope) => {
+		 //    //  		roomScope.getClientBroadcastStream(room).stop()
+	  //   	// 		roomScope.getClientBroadcastStream(room).close()
+		 //    //  	}
+	  //   	// }
+	  //   	// <<
+	  //   	// myStream.stop()
+			// myStream.close()
+	  //   	deskShareServer.stop();
+			// super.appStop(appScope)
+	    	
+
+	  //   	// //getClients
+	  //   	// var clientes:Set[IClient] = rScope.getClients()
+	  //   	// for (cliente <- List(clientes))
+	  //   	// { var a:IClient = cliente.asInstanceOf[IClient]
+	  //   	// 	a.disconnect()
+	  //   	// 	logger.info("==============> client killed")
+	  //   	// }
+
+			// //getConnections
+	  //   	// var connections:Set[IConnection] = rScope.getClientConnections()
+	  //   	// for (cone <- List(connections))
+	  //   	// { var a:IConnection = cone.asInstanceOf[IConnection]
+	  //   	// 	appDisconnect(a);
+	  //   	// 	// a.close()
+	  //   	// 	logger.info("==============> client killed")
+	  //   	// }
+
+	  //   	// connections.appDisconnect()
+			// // conns = rScope.getClientConnections()
+	  // //   	val setConn:Set[IConnection] = rScope.getClientConnections()
+			// // for ( iConnection <- setConn) {
+			// // 		iConnection.close()
+			// // }
+	  //   	// var conn:IConnection = Red5.getConnectionLocal();
+	  //   	// var clien:IClient = conn.getClient();
+	  //   	// clien.disconnect();
+	  //   	//IStreamCapableConnection
+	  //   	// conn.close()
+	  //   }
+
+  	def stopIStream(room:String) {
+		var conn:IConnection = Red5.getConnectionLocal()
+		myDeskShareStream ! StopStream		    	
+		deskShareServer.stop()
+		disconnect(conn, appScope)
+		streamBroadcastClose(getBroadcastStream(appScope,room))
+	    // logger.info("-=======> DeskshareApplication: Sent close([ %s ]) ", room)
+
+		// rtmpCA.sendDeskshareStreamStopped(new ArrayList[Object]())
+
+		// streamManager ! RemoveStream(room)
+		// super.appStop(appScope);
+
+	}
     
+    //método chamado quando o app é parado (não quando faz o close)
     override def streamBroadcastClose(stream:IBroadcastStream) {
+    	
     	var pubName:String = stream.getPublishedName() 
-		logger.debug("==============> stream being closed [ %s ]", pubName)
+		logger.info("==============> stream being closed [ %s ]", pubName)
+  //   	streamManager.stopyStream(pubName)
+     	// streamManager.destroyStream(pubName)
 
-    	super.streamBroadcastClose(stream)
-
-    	streamManager.destroyStream(pubName)
-
-    	deskShareServer.stop();
-		super.appStop(appScope)
+  //   	deskShareServer.stop();
+		// super.appStop(appScope)
 
 		// var conn:IConnection = Red5.getConnectionLocal();
   //       var scopeName:String = "";
@@ -241,6 +378,7 @@ class DeskshareApplication(streamManager: StreamManager, deskShareServer: DeskSh
   // 	       log.info("Connection local was null, using scope name from the stream: {}", stream);
   // 	       scopeName = stream.getScope().getName();
   //       }
+  		super.streamBroadcastClose(stream)
 	}
 
 }

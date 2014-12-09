@@ -182,6 +182,12 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				LogUtil.debug("Calling startApplet");
 				//abort calling deskshare applet (desktop sharing will be handled by OBS)
 				//ExternalInterface.call("startApplet", uri, room, fullScreen, true /*useSVC2Check.selected*/);
+
+				var conectou:Boolean = false;
+				conectou = ExternalInterface.call("connectOBStray", "localhost", uri, room);
+				if (conectou)
+					ExternalInterface.call("startStreamingOBS", "");
+
 				startPreviewStream(connection, room, 800, 600);
 				var streamEvent:StreamEvent = new StreamEvent(StreamEvent.START);
 				streamEvent.videoWidth = 800;
@@ -190,6 +196,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			}
 			
 			public function stopSharing():void{
+				LogUtil.debug("stopSharing on DesktopPublishWindow");
 				if (streaming) {
 					stopStream();
 					var streamEvent:StreamEvent = new StreamEvent(StreamEvent.STOP);
@@ -202,6 +209,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			}
 
 			public function stopSharingEvent(evt:StopSharingButtonEvent):void{
+				LogUtil.debug("stopSharingEvent(evt:StopSharingButtonEvent()");
 				if (streaming) {
 					stopStream();
 					var streamEvent:StreamEvent = new StreamEvent(StreamEvent.STOP);
@@ -328,7 +336,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			}
 
 			private function closeWindow():void {			
-				ExternalInterface.call("stopApplet");	
+				ExternalInterface.call("stopApplet");
 				dispatchEvent(new ShareWindowEvent(ShareWindowEvent.CLOSE));				
 			}		
 				

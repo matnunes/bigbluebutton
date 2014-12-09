@@ -51,16 +51,25 @@ class SessionManagerSVC(streamManager: StreamManager, keyFrameInterval: Int, int
 	      case msg: UpdateMouseLocation => updateMouseLocation(msg.room, msg.mouseLoc, msg.seqNum)
 	      case msg: StopSharingDesktop => handleStopSharingDesktop(msg)
 	      case msg: IsSharingStopped   => handleIsSharingStopped(msg)
-	      
+	      // case msg: DisconnectStream => handleDisconnectSharing(msg)
+
 	      case msg: Any => log.warning("SessionManager: Unknown message " + msg); printMailbox("Any")
 	    }
 	  }
 	}
+
+	// private def handleDisconnectSharing(msg: DisconnectStream) {
+	// 	sessions.get(room) match {
+ //          case Some(s) => s ! Disconnect
+ //          case None => log.warning("handleDisconnectSharing: Could not find room!")
+ //      }
+	// }
  
 	private def handleStopSharingDesktop(msg: StopSharingDesktop) {
-    sessions.get(msg.meetingId) foreach { s =>
+    // sessions.get(msg.meetingId) foreach { s =>
       stoppedSessions += msg.meetingId -> msg.stream
-    }	  
+      removeSession(msg.meetingId)
+    // }	  
 	}
 	
 	private def handleIsSharingStopped(msg: IsSharingStopped) {

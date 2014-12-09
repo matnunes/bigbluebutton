@@ -149,7 +149,7 @@ public class ScreenVideoBroadcastStream implements IBroadcastStream, IProvider, 
 	}
 
 	public void onPipeConnectionEvent(PipeConnectionEvent event) {
-		log.debug("onPipeConnectionEvent(event:{})", event);
+		log.info("========> onPipeConnectionEvent(event:{})", event);
 		switch (event.getType()) {
 	    	case PipeConnectionEvent.PROVIDER_CONNECT_PUSH:
 	    		log.debug("PipeConnectionEvent.PROVIDER_CONNECT_PUSH");
@@ -219,6 +219,11 @@ public class ScreenVideoBroadcastStream implements IBroadcastStream, IProvider, 
 				}
 			}
 		} finally {}
+	}
+
+	public void closeStreamEvent()
+	{
+
 	}
 
 	public long getCreationTime() {

@@ -18,6 +18,7 @@
 */
 package org.bigbluebutton.deskshare.server.stream
 
+import org.bigbluebutton.deskshare.common.Dimension
 import org.bigbluebutton.deskshare.server.sessions.SessionManagerGateway
 import org.red5.server.api.Red5
 import java.util.HashMap
@@ -53,11 +54,16 @@ class DeskshareService(streamManager: StreamManager, sessionGateway: SessionMana
 	
 	def startedToViewStream(stream: String): Unit = {
 		log.debug("DeskshareService: Started viewing stream for room %s", stream)
+		//	sessionGateway.createSession(stream, new Dimension(800, 600), 
+	    //       new Dimension(800, 600), 1, false)
 		sessionGateway.sendKeyFrame(stream)
+		// sessionGateway.closeConnectionStream(stream)
 	}
 	
 	def stopSharingDesktop(meetingId: String) {
-	  log.debug("DeskshareService: Stop sharing for meeting [%s]", meetingId)
+	  log.info("DeskshareService: Stop sharing for meeting [%s]", meetingId)
+	  streamManager.stopStream(meetingId)
 	  sessionGateway.stopSharingDesktop(meetingId, meetingId)
+	//	sessionGateway.removeSession(meetingId, 1)
 	}
 }

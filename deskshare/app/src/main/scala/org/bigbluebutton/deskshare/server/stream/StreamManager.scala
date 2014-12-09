@@ -38,6 +38,7 @@ class StreamManager(record:Boolean, recordingService:RecordingService) extends A
 	private val log = Logger.get
  
 	var app: DeskshareApplication = null
+	var deskStream: DeskshareStream = null
  	
 	def setDeskshareApplication(a: DeskshareApplication) {
 	  app = a
@@ -76,6 +77,7 @@ class StreamManager(record:Boolean, recordingService:RecordingService) extends A
 	  try {                  
 	    log.debug("StreamManager: Creating stream for [ %s ]", room)
 		val stream = new DeskshareStream(app, room, width, height, record, recordingService.getRecorderFor(room))
+		deskStream = stream
 	    log.debug("StreamManager: Initializing stream for [ %s ]", room)
 		if (stream.initializeStream) {
 		  log.debug("StreamManager: Starting stream for [ %s ]", room)
@@ -95,6 +97,18 @@ class StreamManager(record:Boolean, recordingService:RecordingService) extends A
 	  }
 	}
  
+	def stopStream(room: String) {
+		log.info("============>> StreamManager (Stop Stream)")
+		// deskStream ! StopStream
+		// deskStream.exit()
+		app.stopIStream(room)
+		
+		// streams.get(room) match {
+	 //    	case Some(streams) =>  streams ! StopStream
+	 //    	case None => return
+		// }
+	}
+
   	def destroyStream(room: String) {
   		this ! new RemoveStream(room)
   	}  	

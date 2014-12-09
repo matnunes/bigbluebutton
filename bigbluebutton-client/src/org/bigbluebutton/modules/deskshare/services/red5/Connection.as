@@ -316,7 +316,19 @@ package org.bigbluebutton.modules.deskshare.services.red5
     }
     
     public function stopSharingDesktop(meetingId: String, stream: String):void {
-      nc.call("deskshare.stopSharingDesktop", null, meetingId);
+      LogUtil.debug("=======> Sending stopSharingDesktop"); 
+      nc.call("deskshare.stopSharingDesktop", new Responder(
+        function(result:Object):void {
+          LogUtil.debug("*** success");
+        },
+        function(status:Object):void {
+          LogUtil.debug("*** fail");
+          LogUtil.error("Error occurred:"); 
+          for (var x:Object in status) { 
+            LogUtil.error(x + " : " + status[x]); 
+          } 
+        }),
+        meetingId);
     }
     
     /**
