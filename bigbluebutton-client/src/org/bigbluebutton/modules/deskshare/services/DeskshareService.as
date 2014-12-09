@@ -53,7 +53,7 @@ package org.bigbluebutton.modules.deskshare.services
 		
 		public function connect(uri:String, room:String):void {
 			this.uri = uri;
-      this.room = room;
+      		this.room = room;
 			trace("Deskshare Service connecting to " + uri);
 			conn = new Connection(room);
 
@@ -78,7 +78,10 @@ package org.bigbluebutton.modules.deskshare.services
       conn.sendStartedViewingNotification(stream);
     }
     
+    //método chamado qndo o apresentador fecha a janela deskshare
     public function stopSharingDesktop(meetingId: String, stream: String):void {
+      LogUtil.debug("===========> stopSharingDesktop(meetingId: String, stream: String) on DeskshareService")
+      conn.getConnection();
       conn.stopSharingDesktop(meetingId, stream);
     }
     
