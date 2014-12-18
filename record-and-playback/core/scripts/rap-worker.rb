@@ -277,14 +277,20 @@ def publish_processed_meeting(recording_dir)
         match2 = /([^\/]*).rb$/.match(process_script)
         process_type = match2[1]
         this_processed_done = "#{recording_dir}/status/processed/#{meeting_id}-#{process_type}.done"
-        FileUtils.rm(this_processed_done)
-        FileUtils.rm_rf("#{recording_dir}/process/#{process_type}/#{meeting_id}")
+        if File.exists?(this_processed_done)
+          FileUtils.rm(this_processed_done)
+        end
+        this_processed_dir = "#{recording_dir}/process/#{process_type}/#{meeting_id}"
+        if Dir.exists?(this_processed_dir)
+          FileUtils.rm_rf(this_processed_dir)
+        end
       end
       Dir.glob("publish/*.rb").sort.each do |publish_script|
         match2 = /([^\/]*).rb$/.match(publish_script)
         publish_type = match2[1]
         FileUtils.rm_rf("#{recording_dir}/publish/#{publish_type}/#{meeting_id}")
       end
+
 
     end
   end
