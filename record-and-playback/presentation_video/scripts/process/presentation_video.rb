@@ -115,6 +115,35 @@ if File.exists?(recorder_done)
     ]
   }
 
+  # Before we encode the video and execute mkclean, merge deskshare with recorded video
+  events_xml = "/var/bigbluebutton/recording/raw/#{meeting_id}/events.xml"
+
+  BigBlueButton.logger.info "Getting start events from #{events_xml}"
+
+  deskshare_events = BigBlueButton::Events::get_start_deskshare_events(events_xml)
+
+  deskshare_events.each do |deskshare_event|
+    start_time = deskshare_event[:start_timestamp]
+    deskshare_flv_file = "/var/bigbluebutton/deskshare/#{deskshare_event[:stream]}"
+    BigBlueButton.logger.info "Start time #{start_time} flv file #{deskshare_flv_file}"
+
+    #TODO
+    # 1) get flv video infos (i.e. width, height)
+    # 2) determines which dimension should be fixed
+    # 2.1) scale the other dimension
+    # 3) determine a good centralization to the video
+    # 3.1) consider video width and height
+    # 4) merge video
+    #
+    #
+    #ffmpeg -i video.webm -i deskshare_flv_file -filter_complex
+    #{}"[0:v] setpts=PTS-STARTPTS [presentation_video];
+    #[1:v] setpts=PTS-STARTPTS+$DESKSHARE_DELAY/TB, scale=810:-2,
+    #pad=width=$MAX_WIDTH:height=$MAX_HEIGHT:x=0:y=0:color=white [deskshare];
+    #[presentation_video][deskshare] overlay=eof_action=pass:x=0:y=0"
+    #-c:a libvorbis -b:a 48K -f webm myout.webm
+  end
+
   video_before_mkclean = "#{target_dir}/before_mkclean"
   converted_video_file = "#{target_dir}/video"
   BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, video_before_mkclean, 0)
