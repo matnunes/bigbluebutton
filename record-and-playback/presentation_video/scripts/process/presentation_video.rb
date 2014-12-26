@@ -42,9 +42,11 @@ props = YAML::load(File.open('presentation_video.yml'))
 presentation_published_dir = props['presentation_published_dir']
 presentation_unpublished_dir = props['presentation_unpublished_dir']
 playback_dir = props['playback_dir']
+max_deskshare_width = props['max_deskshare_width']
 
 recorder_props = YAML::load(File.open('mconf-presentation-recorder.yml'))
 presentation_recorder_dir = recorder_props['presentation_recorder_dir']
+max_deskshare_height = recorder_props['record_window_height']
 
 FileUtils.mkdir_p "/var/log/bigbluebutton/presentation_video"
 BigBlueButton.logger = Logger.new("#{log_dir}/presentation_video/process-#{meeting_id}.log", 'daily' )
@@ -66,10 +68,12 @@ if File.exists?(recorder_done)
 
   # The video was recorded, now it's time to prepare everything
   presentation_recorder_meeting_dir = "#{presentation_recorder_dir}/#{meeting_id}"
-  recorded_screen_raw_file = "#{presentation_recorder_meeting_dir}/recorded_screen_raw.webm"
+  recorded_raw_file = "#{presentation_recorder_meeting_dir}/recorded_screen_raw.webm"
 
   FileUtils.cp_r "#{presentation_recorder_meeting_dir}/metadata.xml", "#{target_dir}/metadata.xml"
-  FileUtils.cp_r "#{recorded_screen_raw_file}", "#{target_dir}/"
+  FileUtils.cp_r "#{recorded_raw_file}", "#{target_dir}/"
+
+  recorded_screen_raw_file = "#{target_dir}/recorded_screen_raw.webm"
 
   metadata = "#{target_dir}/metadata.xml"
   BigBlueButton.logger.info "Parsing metadata on #{metadata}"
@@ -125,8 +129,37 @@ if File.exists?(recorder_done)
   deskshare_events.each do |deskshare_event|
     start_time = deskshare_event[:start_timestamp]
     deskshare_flv_file = "/var/bigbluebutton/deskshare/#{deskshare_event[:stream]}"
-    BigBlueButton.logger.info "Start time #{start_time} flv file #{deskshare_flv_file}"
 
+    deskshare_video_height = BigBlueButton.get_video_height(deskshare_flv_file)
+    deskshare_video_width = BigBlueButton.get_video_width(deskshare_flv_file)  
+
+    BigBlueButton.logger.info "Start time #{start_time} flv file #{deskshare_flv_file}"
+    BigBlueButton.logger.info "height #{deskshare_video_height} width #{deskshare_video_width}"
+
+    # do some logic with max_deskshare_width max_deskshare_height  
+
+    delay_start_time = 7
+
+    presentation_video_params = "[0:v] setpts=PTS-STARTPTS [presentation_video];"
+    
+    deskshare_start_delay = "[1:v] setpts=PTS-STARTPTS+#{delay_start_time}/TB, "
+    deskshare_scale = "scale=810:-2, "
+    deskshare_padding = "pad=width=#{max_deskshare_width}:height=#{max_deskshare_height}:x=0:y=0:color=white [deskshare]; "
+    deskshare_params = deskshare_start_delay + deskshare_scale + deskshare_padding
+    
+    overlay_params = "[presentation_video][deskshare] overlay=eof_action=pass:x=0:y=0"
+
+    raw_merged_video = "#{target_dir}/recorded_screen_raw_with_deskshare.webm"
+
+    ffmpeg_filter = "-filter_complex \"#{presentation_video_params} #{deskshare_params} #{overlay_params}\""
+    output_params = "-c:a libvorbis -b:a 48K -f webm #{raw_merged_video}"
+    command = "ffmpeg -i #{recorded_screen_raw_file} -i #{deskshare_flv_file} #{ffmpeg_filter} #{output_params}"
+    BigBlueButton.execute command
+
+    if (File.exists?(raw_merged_video) && File.exists?(recorded_screen_raw))
+      FileUtils.rm recorded_screen_raw
+      FileUtils.mv(raw_merged_video, recorded_screen_raw)
+    end
     #TODO
     # 1) get flv video infos (i.e. width, height)
     # 2) determines which dimension should be fixed
@@ -143,6 +176,8 @@ if File.exists?(recorder_done)
     #[presentation_video][deskshare] overlay=eof_action=pass:x=0:y=0"
     #-c:a libvorbis -b:a 48K -f webm myout.webm
   end
+
+  BigBlueButton.logger.info "DONE with deskshare processing"
 
   video_before_mkclean = "#{target_dir}/before_mkclean"
   converted_video_file = "#{target_dir}/video"
