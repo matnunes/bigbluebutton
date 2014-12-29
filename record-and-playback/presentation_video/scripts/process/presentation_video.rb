@@ -68,12 +68,12 @@ if File.exists?(recorder_done)
 
   # The video was recorded, now it's time to prepare everything
   presentation_recorder_meeting_dir = "#{presentation_recorder_dir}/#{meeting_id}"
-  recorded_raw_file = "#{presentation_recorder_meeting_dir}/recorded_screen_raw.webm"
+  recorded_screen_raw_file = "#{presentation_recorder_meeting_dir}/recorded_screen_raw.webm"
 
   FileUtils.cp_r "#{presentation_recorder_meeting_dir}/metadata.xml", "#{target_dir}/metadata.xml"
-  FileUtils.cp_r "#{recorded_raw_file}", "#{target_dir}/"
+  FileUtils.cp_r "#{recorded_screen_raw_file}", "#{target_dir}/"
 
-  recorded_screen_raw_file = "#{target_dir}/recorded_screen_raw.webm"
+  recorded_screen_raw_target_file = "#{target_dir}/recorded_screen_raw.webm"
 
   metadata = "#{target_dir}/metadata.xml"
   BigBlueButton.logger.info "Parsing metadata on #{metadata}"
@@ -136,52 +136,82 @@ if File.exists?(recorder_done)
     BigBlueButton.logger.info "Start time #{start_time} flv file #{deskshare_flv_file}"
     BigBlueButton.logger.info "height #{deskshare_video_height} width #{deskshare_video_width}"
 
-    # do some logic with max_deskshare_width max_deskshare_height  
+    scaled_width = max_deskshare_width
+    scaled_height = max_deskshare_height
 
+    deskshare_padding_area_ratio = Float(max_deskshare_width) / Float(max_deskshare_height)
+    deskshare_video_ratio = Float(deskshare_video_width) / Float(deskshare_video_height)   
+
+    width_offset = 0
+    height_offset = 0
+
+    # Scale deskshare video respecting its scale and centralize it
+    #
+    # We could use '-2' in the dimension to be scaled, but as we need to calculate the scalled height/width
+    # to centralize the video anyway, we use our value instead.
+    if (deskshare_padding_area_ratio < deskshare_video_ratio)      
+      if (max_deskshare_width > deskshare_video_width)
+        scaled_width = deskshare_video_width
+      else
+        scaled_width = max_deskshare_width
+      end
+
+      # based on: ratio = width / height
+      expected_height = (Float(scaled_width) / Float(deskshare_video_ratio)).floor
+      height_offset = ((max_deskshare_height - expected_height) / 2).floor
+      width_offset = ((max_deskshare_width - scaled_width)/2).floor    
+
+      (expected_height > max_deskshare_height) ?
+          scaled_height = max_deskshare_height :
+          scaled_height = expected_height
+    else
+      if (max_deskshare_height > deskshare_video_height)
+        scaled_height = deskshare_video_height
+      else
+        scaled_height = max_deskshare_height
+      end
+
+      # based on: ratio = width / height
+      expected_width = (Float(scaled_height) * Float(deskshare_video_ratio)).floor
+      height_offset = ((max_deskshare_height - expected_height) / 2).floor
+      width_offset = ((max_deskshare_width - scaled_width)/2).floor    
+
+      (expected_width > max_deskshare_width) ?
+          scaled_width = max_deskshare_width :
+          scaled_width = expected_width            
+    end      
+  
+    BigBlueButton.logger.info "Scalling video to #{scaled_width}x#{scaled_height}"
+    BigBlueButton.logger.info "Centralizing at x:#{width_offset} y:#{height_offset}"
+
+    # TODO: take delay in seconds from events.xml (the start_time is relative to start of events.xml)
     delay_start_time = 7
 
     presentation_video_params = "[0:v] setpts=PTS-STARTPTS [presentation_video];"
     
     deskshare_start_delay = "[1:v] setpts=PTS-STARTPTS+#{delay_start_time}/TB, "
-    deskshare_scale = "scale=810:-2, "
+    deskshare_scale = "scale=#{scaled_width}:#{scaled_height}, "
     deskshare_padding = "pad=width=#{max_deskshare_width}:height=#{max_deskshare_height}:x=0:y=0:color=white [deskshare]; "
     deskshare_params = deskshare_start_delay + deskshare_scale + deskshare_padding
     
-    overlay_params = "[presentation_video][deskshare] overlay=eof_action=pass:x=0:y=0"
+    overlay_params = "[presentation_video][deskshare] overlay=eof_action=pass:x=#{width_offset}:y=#{height_offset}"
 
     raw_merged_video = "#{target_dir}/recorded_screen_raw_with_deskshare.webm"
 
     ffmpeg_filter = "-filter_complex \"#{presentation_video_params} #{deskshare_params} #{overlay_params}\""
     output_params = "-c:a libvorbis -b:a 48K -f webm #{raw_merged_video}"
-    command = "ffmpeg -i #{recorded_screen_raw_file} -i #{deskshare_flv_file} #{ffmpeg_filter} #{output_params}"
+    command = "ffmpeg -i #{recorded_screen_raw_target_file} -i #{deskshare_flv_file} #{ffmpeg_filter} #{output_params}"
     BigBlueButton.execute command
 
-    if (File.exists?(raw_merged_video) && File.exists?(recorded_screen_raw))
-      FileUtils.rm recorded_screen_raw
-      FileUtils.mv(raw_merged_video, recorded_screen_raw)
+    if (File.exists?(raw_merged_video) && File.exists?(recorded_screen_raw_target_file))
+      FileUtils.rm recorded_screen_raw_target_file
+      FileUtils.mv(raw_merged_video, recorded_screen_raw_target_file)
     end
-    #TODO
-    # 1) get flv video infos (i.e. width, height)
-    # 2) determines which dimension should be fixed
-    # 2.1) scale the other dimension
-    # 3) determine a good centralization to the video
-    # 3.1) consider video width and height
-    # 4) merge video
-    #
-    #
-    #ffmpeg -i video.webm -i deskshare_flv_file -filter_complex
-    #{}"[0:v] setpts=PTS-STARTPTS [presentation_video];
-    #[1:v] setpts=PTS-STARTPTS+$DESKSHARE_DELAY/TB, scale=810:-2,
-    #pad=width=$MAX_WIDTH:height=$MAX_HEIGHT:x=0:y=0:color=white [deskshare];
-    #[presentation_video][deskshare] overlay=eof_action=pass:x=0:y=0"
-    #-c:a libvorbis -b:a 48K -f webm myout.webm
   end
-
-  BigBlueButton.logger.info "DONE with deskshare processing"
 
   video_before_mkclean = "#{target_dir}/before_mkclean"
   converted_video_file = "#{target_dir}/video"
-  BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_file, format, video_before_mkclean, 0)
+  BigBlueButton::EDL::encode(audio_file, recorded_screen_raw_target_file, format, video_before_mkclean, 0)
 
   command = "mkclean --quiet #{video_before_mkclean}.#{format[:extension]} #{converted_video_file}.#{format[:extension]}"
   BigBlueButton.logger.info command
