@@ -122,91 +122,123 @@ if File.exists?(recorder_done)
   # Before we encode the video and execute mkclean, merge deskshare with recorded video
   events_xml = "/var/bigbluebutton/recording/raw/#{meeting_id}/events.xml"
 
-  BigBlueButton.logger.info "Getting start events from #{events_xml}"
+  record_start_stop_events = BigBlueButton::Events::get_start_and_stop_rec_events(events_xml)
+  record_events = BigBlueButton::Events::match_start_and_stop_rec_events(record_start_stop_events)
+  BigBlueButton.logger.info "Record events: #{record_events}"
 
-  deskshare_events = BigBlueButton::Events::get_start_deskshare_events(events_xml)
+  deskshare_events = BigBlueButton::Events::get_matched_start_stop_deskshare_events(events_xml)
+  BigBlueButton.logger.info "Deskshare events: #{deskshare_events}"
 
-  deskshare_events.each do |deskshare_event|
-    start_time = deskshare_event[:start_timestamp]
-    deskshare_flv_file = "/var/bigbluebutton/deskshare/#{deskshare_event[:stream]}"
+  # For all record events, check if there are deskshare events in between the recording and
+  # calculate its start time and stop time offsets
+  video_processed_time = 0
+  deskshare_video_duration = 0
+  record_events.each do |record_event|
+    record_start_time = record_event[:start_timestamp]
+    record_stop_time = record_event[:stop_timestamp]
 
-    deskshare_video_height = BigBlueButton.get_video_height(deskshare_flv_file)
-    deskshare_video_width = BigBlueButton.get_video_width(deskshare_flv_file)  
+    BigBlueButton.logger.info "Processing recording from #{record_start_time}ns to #{record_stop_time}ns"
 
-    BigBlueButton.logger.info "Start time #{start_time} flv file #{deskshare_flv_file}"
-    BigBlueButton.logger.info "height #{deskshare_video_height} width #{deskshare_video_width}"
+    deskshare_events.each do |deskshare_event|
+      deskshare_start_time = deskshare_event[:start_timestamp]
+      deskshare_stop_time = deskshare_event[:stop_timestamp]
+      deskshare_flv_file = "/var/bigbluebutton/deskshare/#{deskshare_event[:stream]}"
 
-    scaled_width = max_deskshare_width
-    scaled_height = max_deskshare_height
+      cutted_deskshare = "#{target_dir}/cutted_deskshare.flv"
+      # Calculate deskshare video time padding. Cut videos if necessary.
+      if (deskshare_start_time > record_start_time && deskshare_start_time < record_stop_time)
+          deskshare_start_time_padding = (deskshare_start_time - record_start_time + video_processed_time) / 1000.0
 
-    deskshare_padding_area_ratio = Float(max_deskshare_width) / Float(max_deskshare_height)
-    deskshare_video_ratio = Float(deskshare_video_width) / Float(deskshare_video_height)   
+          if (deskshare_stop_time > record_stop_time)
+            # Video duration in seconds. Used to cut deskshare at end of recording.
+            deskshare_video_duration = (record_stop_time - deskshare_start_time) / 1000.0
 
-    width_offset = 0
-    height_offset = 0
+            #TODO: cut input deskshare videos to be just the part recorded
+            #command = "ffmpeg -i deskshare_flv_file -t deskshare_video_duration -copy "
+            #BigBlueButton.execute command
 
-    # Scale deskshare video respecting its scale and centralize it
-    #
-    # We could use '-2' in the dimension to be scaled, but as we need to calculate the scalled height/width
-    # to centralize the video anyway, we use our value instead.
-    if (deskshare_padding_area_ratio < deskshare_video_ratio)      
-      if (max_deskshare_width > deskshare_video_width)
-        scaled_width = deskshare_video_width
+            #deskshare_flv_file = cutted_deskshare
+          else
+            deskshare_video_duration = (deskshare_stop_time - deskshare_start_time) / 1000.0            
+          end
       else
-        scaled_width = max_deskshare_width
+        BigBlueButton.logger.info "Deskshare event of #{deskshare_flv_file} out of this recording time"
+        next
       end
 
-      # based on: ratio = width / height
-      expected_height = (Float(scaled_width) / Float(deskshare_video_ratio)).floor
-      height_offset = ((max_deskshare_height - expected_height) / 2).floor
-      width_offset = ((max_deskshare_width - scaled_width)/2).floor    
+      deskshare_video_height = BigBlueButton.get_video_height(deskshare_flv_file)
+      deskshare_video_width = BigBlueButton.get_video_width(deskshare_flv_file)  
 
-      (expected_height > max_deskshare_height) ?
-          scaled_height = max_deskshare_height :
-          scaled_height = expected_height
-    else
-      if (max_deskshare_height > deskshare_video_height)
-        scaled_height = deskshare_video_height
+      BigBlueButton.logger.info "Start time #{deskshare_start_time} flv file #{deskshare_flv_file}"
+      BigBlueButton.logger.info "height #{deskshare_video_height} width #{deskshare_video_width}"
+
+      scaled_width = max_deskshare_width
+      scaled_height = max_deskshare_height
+
+      deskshare_padding_area_ratio = Float(max_deskshare_width) / Float(max_deskshare_height)
+      deskshare_video_ratio = Float(deskshare_video_width) / Float(deskshare_video_height)   
+
+      width_offset = 0
+      height_offset = 0
+
+      BigBlueButton.logger.info "Deskshare padding area ratio #{deskshare_padding_area_ratio} video ratio #{deskshare_video_ratio}"
+
+      # Scale deskshare video respecting its scale and centralize it
+      #
+      # We could use '-2' in the dimension to be scaled, but as we need to calculate the scalled height/width
+      # to centralize the video anyway, we use our value instead.
+      if (deskshare_padding_area_ratio < deskshare_video_ratio)      
+        if (max_deskshare_width > deskshare_video_width)
+          scaled_width = deskshare_video_width
+        else
+          scaled_width = max_deskshare_width
+        end
+
+        # based on: ratio = width / height
+        expected_height = (Float(scaled_width) / Float(deskshare_video_ratio)).floor
+        height_offset = ((max_deskshare_height - expected_height) / 2).floor
+        width_offset = ((max_deskshare_width - scaled_width)/2).floor    
+
+        (expected_height > max_deskshare_height) ?
+            scaled_height = max_deskshare_height :
+            scaled_height = expected_height
       else
-        scaled_height = max_deskshare_height
+        if (max_deskshare_height > deskshare_video_height)
+          scaled_height = deskshare_video_height
+        else
+          scaled_height = max_deskshare_height
+        end
+
+        # based on: ratio = width / height
+        expected_width = (Float(scaled_height) * Float(deskshare_video_ratio)).floor
+        height_offset = ((max_deskshare_height - scaled_height) / 2).floor
+        width_offset = ((max_deskshare_width - expected_width)/2).floor    
+
+        (expected_width > max_deskshare_width) ?
+            scaled_width = max_deskshare_width :
+            scaled_width = expected_width
       end
-
-      # based on: ratio = width / height
-      expected_width = (Float(scaled_height) * Float(deskshare_video_ratio)).floor
-      height_offset = ((max_deskshare_height - expected_height) / 2).floor
-      width_offset = ((max_deskshare_width - scaled_width)/2).floor    
-
-      (expected_width > max_deskshare_width) ?
-          scaled_width = max_deskshare_width :
-          scaled_width = expected_width            
-    end      
-  
-    BigBlueButton.logger.info "Scalling video to #{scaled_width}x#{scaled_height}"
-    BigBlueButton.logger.info "Centralizing at x:#{width_offset} y:#{height_offset}"
-
-    # TODO: take delay in seconds from events.xml (the start_time is relative to start of events.xml)
-    delay_start_time = 7
-
-    presentation_video_params = "[0:v] setpts=PTS-STARTPTS [presentation_video];"
     
-    deskshare_start_delay = "[1:v] setpts=PTS-STARTPTS+#{delay_start_time}/TB, "
-    deskshare_scale = "scale=#{scaled_width}:#{scaled_height}, "
-    deskshare_padding = "pad=width=#{max_deskshare_width}:height=#{max_deskshare_height}:x=0:y=0:color=white [deskshare]; "
-    deskshare_params = deskshare_start_delay + deskshare_scale + deskshare_padding
-    
-    overlay_params = "[presentation_video][deskshare] overlay=eof_action=pass:x=#{width_offset}:y=#{height_offset}"
+      BigBlueButton.logger.info "Deskshare video scaled to #{scaled_width}x#{scaled_height}"
+      BigBlueButton.logger.info "Deskshare video centralized at x:#{width_offset} y:#{height_offset}"
 
-    raw_merged_video = "#{target_dir}/recorded_screen_raw_with_deskshare.webm"
+      raw_merged_video = "#{target_dir}/recorded_screen_raw_with_deskshare.webm"
 
-    ffmpeg_filter = "-filter_complex \"#{presentation_video_params} #{deskshare_params} #{overlay_params}\""
-    output_params = "-c:a libvorbis -b:a 48K -f webm #{raw_merged_video}"
-    command = "ffmpeg -i #{recorded_screen_raw_target_file} -i #{deskshare_flv_file} #{ffmpeg_filter} #{output_params}"
-    BigBlueButton.execute command
+      command = "ffmpeg -i #{recorded_screen_raw_target_file} -i #{deskshare_flv_file} -filter_complex \"
+                  [0:v] setpts=PTS-STARTPTS [presentation_video];
+                  [1:v] setpts=PTS-STARTPTS+#{deskshare_start_time_padding}/TB, scale=#{scaled_width}:#{scaled_height}, 
+                  pad=width=#{max_deskshare_width}:height=#{max_deskshare_height}:x=#{width_offset}:y=#{height_offset}:color=white [deskshare];
+                  [presentation_video][deskshare] overlay=eof_action=pass:x=0:y=0
+                  \" -c:a libvorbis -b:a 48K -f webm #{raw_merged_video}"
+      BigBlueButton.execute command
 
-    if (File.exists?(raw_merged_video) && File.exists?(recorded_screen_raw_target_file))
-      FileUtils.rm recorded_screen_raw_target_file
-      FileUtils.mv(raw_merged_video, recorded_screen_raw_target_file)
+      if (File.exists?(raw_merged_video) && File.exists?(recorded_screen_raw_target_file))
+        FileUtils.rm recorded_screen_raw_target_file
+        FileUtils.mv(raw_merged_video, recorded_screen_raw_target_file)
+      end
     end
+    video_processed_time += record_stop_time - record_start_time
+    BigBlueButton.logger.info "#{video_processed_time}ns from recorded presentation_video processed."
   end
 
   video_before_mkclean = "#{target_dir}/before_mkclean"
