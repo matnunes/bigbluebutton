@@ -188,15 +188,16 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				if (conectou)
 					ExternalInterface.call("startStreamingOBS", "");
 
-				startPreviewStream(connection, room, 800, 600);
+				startPreviewStream(connection, room, 960, 540);
 				var streamEvent:StreamEvent = new StreamEvent(StreamEvent.START);
-				streamEvent.videoWidth = 800;
-				streamEvent.videoHeight = 600;
+				streamEvent.videoWidth = 960;
+				streamEvent.videoHeight = 540;
 				dispatchEvent(streamEvent);
 			}
 			
 			public function stopSharing():void{
 				if (streaming) {
+					ExternalInterface.call("stopOBS");
 					stopStream();
 					var streamEvent:StreamEvent = new StreamEvent(StreamEvent.STOP);
 					dispatchEvent(streamEvent);					

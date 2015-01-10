@@ -54,16 +54,13 @@ class DeskshareService(streamManager: StreamManager, sessionGateway: SessionMana
 	
 	def startedToViewStream(stream: String): Unit = {
 		log.debug("DeskshareService: Started viewing stream for room %s", stream)
-		//	sessionGateway.createSession(stream, new Dimension(800, 600), 
-	    //       new Dimension(800, 600), 1, false)
 		sessionGateway.sendKeyFrame(stream)
-		// sessionGateway.closeConnectionStream(stream)
 	}
 	
 	def stopSharingDesktop(meetingId: String) {
 	  log.info("DeskshareService: Stop sharing for meeting [%s]", meetingId)
 	  streamManager.stopStream(meetingId)
 	  sessionGateway.stopSharingDesktop(meetingId, meetingId)
-	//	sessionGateway.removeSession(meetingId, 1)
+	  sessionGateway.removeSession(meetingId, 1)
 	}
 }

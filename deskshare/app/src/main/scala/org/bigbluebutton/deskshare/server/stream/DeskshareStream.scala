@@ -73,8 +73,6 @@ class DeskshareStream(app: DeskshareApplication, name: String, val width: Int, v
 	}
  
 	private def stopStream() = {
-		log.info("DeskShareStream: Stopping stream %s", name)
-		log.info("DeskShareStream: Sending deskshareStreamStopped for %s", name)
 		if (record) {
 	  		recorder.stop()
 	  	}
@@ -85,7 +83,6 @@ class DeskshareStream(app: DeskshareApplication, name: String, val width: Int, v
 	}
 	
 	private def startStream() = {
-	  log.info("========> DeskShareStream: Starting stream %s", name)
 	  if (record) {
 	  	recorder.start()
 	  }
