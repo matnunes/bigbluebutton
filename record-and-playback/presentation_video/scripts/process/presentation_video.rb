@@ -109,16 +109,6 @@ if File.exists?(recorder_done)
     raise "NoAudioFile"
   end
 
-  format = {
-    :extension => 'webm',
-    :parameters => [
-      [ '-c:v', 'libvpx', '-crf', '34', '-b:v', '60M',
-      '-threads', '2', '-deadline', 'good', '-cpu-used', '3',
-      '-c:a', 'copy', '-b:a', '32K',
-      '-f', 'webm' ]
-    ]
-  }
-
   # Before we encode the video and execute mkclean, merge deskshare with recorded video
   events_xml = "/var/bigbluebutton/recording/raw/#{meeting_id}/events.xml"
 
@@ -137,33 +127,57 @@ if File.exists?(recorder_done)
     record_start_time = record_event[:start_timestamp]
     record_stop_time = record_event[:stop_timestamp]
 
-    BigBlueButton.logger.info "Processing recording from #{record_start_time}ns to #{record_stop_time}ns"
+    BigBlueButton.logger.info "Processing recording from #{record_start_time}ms to #{record_stop_time}ms"
 
     deskshare_events.each do |deskshare_event|
       deskshare_start_time = deskshare_event[:start_timestamp]
       deskshare_stop_time = deskshare_event[:stop_timestamp]
-      deskshare_flv_file = "/var/bigbluebutton/deskshare/#{deskshare_event[:stream]}"
+      deskshare_flv_file = "/var/bigbluebutton/deskshare/#{deskshare_event[:stream]}"      
 
-      cutted_deskshare = "#{target_dir}/cutted_deskshare.flv"
+      deskshare_mpg = "#{target_dir}/deskshare_mpg.mpg"
+      cutted_deskshare = "#{target_dir}/cutted_deskshare.mpg"      
       # Calculate deskshare video time padding. Cut videos if necessary.
-      if (deskshare_start_time > record_start_time && deskshare_start_time < record_stop_time)
-          deskshare_start_time_padding = (deskshare_start_time - record_start_time + video_processed_time) / 1000.0
-
-          if (deskshare_stop_time > record_stop_time)
-            # Video duration in seconds. Used to cut deskshare at end of recording.
-            deskshare_video_duration = (record_stop_time - deskshare_start_time) / 1000.0
-
-            #TODO: cut input deskshare videos to be just the part recorded
-            #command = "ffmpeg -i deskshare_flv_file -t deskshare_video_duration -copy "
-            #BigBlueButton.execute command
-
-            #deskshare_flv_file = cutted_deskshare
-          else
-            deskshare_video_duration = (deskshare_stop_time - deskshare_start_time) / 1000.0            
-          end
-      else
-        BigBlueButton.logger.info "Deskshare event of #{deskshare_flv_file} out of this recording time"
+      # Deskshare out of recording time beeing analysed
+      if (deskshare_stop_time < record_start_time || deskshare_start_time > record_stop_time)
+        BigBlueButton.logger.info "Skipping deskshare video #{deskshare_flv_file} out of this recording time"
         next
+      # Deskshare started at recording time
+      elsif (deskshare_start_time >= record_start_time && deskshare_start_time <= record_stop_time)
+        deskshare_start_time_padding = (deskshare_start_time - record_start_time + video_processed_time) / 1000.0
+
+        # Deskshare stoped after recording time
+        if (deskshare_stop_time > record_stop_time)
+          # Video duration in seconds. Used to cut deskshare at end of recording.
+          trim_video_duration = record_stop_time - deskshare_start_time
+          BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, deskshare_mpg)
+          BigBlueButton.trim_video(0, trim_video_duration, deskshare_mpg, cutted_deskshare)
+        else
+          # Convert deskshare video and put into cutted_deskshare path just to make the logic more consistent
+          BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, cutted_deskshare)
+        end
+      # Deskshare started before recording
+      elsif (deskshare_start_time < record_start_time)
+        deskshare_start_time_padding = video_processed_time / 1000.0
+
+        # Deskshare ended during recording.
+        if (deskshare_stop_time <= record_stop_time)
+          trim_start_time = record_start_time - deskshare_start_time
+          trim_video_duration = deskshare_stop_time - record_start_time
+          BigBlueButton.logger.info "Trimming video: start #{trim_start_time}ms duration #{trim_video_duration}ms"
+          BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, deskshare_mpg)
+          BigBlueButton.trim_video(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)
+        # Deskshare ended after recording.
+        else
+          trim_start_time = record_start_time - deskshare_start_time
+          trim_video_duration = record_stop_time - record_start_time
+          BigBlueButton.logger.info "Trimming video: start #{trim_start_time}ms duration #{trim_video_duration}ms"
+          BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, deskshare_mpg)
+          BigBlueButton.trim_video(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)
+        end
+      end
+
+      if File.exists?(deskshare_mpg)
+        FileUtils.rm(deskshare_mpg)
       end
 
       deskshare_video_height = BigBlueButton.get_video_height(deskshare_flv_file)
@@ -224,7 +238,7 @@ if File.exists?(recorder_done)
 
       raw_merged_video = "#{target_dir}/recorded_screen_raw_with_deskshare.webm"
 
-      command = "ffmpeg -i #{recorded_screen_raw_target_file} -i #{deskshare_flv_file} -filter_complex \"
+      command = "ffmpeg -i #{recorded_screen_raw_target_file} -i #{cutted_deskshare} -filter_complex \"
                   [0:v] setpts=PTS-STARTPTS [presentation_video];
                   [1:v] setpts=PTS-STARTPTS+#{deskshare_start_time_padding}/TB, scale=#{scaled_width}:#{scaled_height}, 
                   pad=width=#{max_deskshare_width}:height=#{max_deskshare_height}:x=#{width_offset}:y=#{height_offset}:color=white [deskshare];
@@ -237,9 +251,24 @@ if File.exists?(recorder_done)
         FileUtils.mv(raw_merged_video, recorded_screen_raw_target_file)
       end
     end
+
+    if File.exists?(cutted_deskshare)
+      FileUtils.rm (cutted_deskshare)
+    end
+
     video_processed_time += record_stop_time - record_start_time
-    BigBlueButton.logger.info "#{video_processed_time}ns from recorded presentation_video processed."
+    BigBlueButton.logger.info "#{video_processed_time}ms from recorded presentation_video processed."
   end
+
+  format = {
+    :extension => 'webm',
+    :parameters => [
+      [ '-c:v', 'libvpx', '-crf', '34', '-b:v', '60M',
+      '-threads', '2', '-deadline', 'good', '-cpu-used', '3',
+      '-c:a', 'copy', '-b:a', '32K',
+      '-f', 'webm' ]
+    ]
+  }
 
   video_before_mkclean = "#{target_dir}/before_mkclean"
   converted_video_file = "#{target_dir}/video"
