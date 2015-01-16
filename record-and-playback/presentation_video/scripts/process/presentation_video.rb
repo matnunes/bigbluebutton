@@ -135,44 +135,52 @@ if File.exists?(recorder_done)
       deskshare_flv_file = "/var/bigbluebutton/deskshare/#{deskshare_event[:stream]}"      
 
       deskshare_mpg = "#{target_dir}/deskshare_mpg.mpg"
-      cutted_deskshare = "#{target_dir}/cutted_deskshare.mpg"      
+      cutted_deskshare = "#{target_dir}/cutted_deskshare.mpg"   
+         
       # Calculate deskshare video time padding. Cut videos if necessary.
-      # Deskshare out of recording time beeing analysed
+      # Deskshare video first converted to mpg otherwise ffmpeg don't cut the video correctly.    
       if (deskshare_stop_time < record_start_time || deskshare_start_time > record_stop_time)
-        BigBlueButton.logger.info "Skipping deskshare video #{deskshare_flv_file} out of this recording time"
+        # Deskshare out of recording time beeing analysed
+        BigBlueButton.logger.info "Deskshare video #{deskshare_flv_file} out of this recording time. Skipping."
         next
-      # Deskshare started at recording time
-      elsif (deskshare_start_time >= record_start_time && deskshare_start_time <= record_stop_time)
+      elsif (deskshare_start_time >= record_start_time && deskshare_start_time <= record_stop_time)        
+        # Deskshare started at recording time
         deskshare_start_time_padding = (deskshare_start_time - record_start_time + video_processed_time) / 1000.0
-
-        # Deskshare stoped after recording time
+        
         if (deskshare_stop_time > record_stop_time)
-          # Video duration in seconds. Used to cut deskshare at end of recording.
+          BigBlueButton.logger.info "Deskshare video started within recording time and ended after recording stoped"
+
           trim_video_duration = record_stop_time - deskshare_start_time
           BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, deskshare_mpg)
-          BigBlueButton.trim_video(0, trim_video_duration, deskshare_mpg, cutted_deskshare)
+          BigBlueButton.trim_video_no_log(0, trim_video_duration, deskshare_mpg, cutted_deskshare)
+          BigBlueButton.logger.info "Video Trimmed!"
         else
+          BigBlueButton.logger.info "Deskshare video started and ended within recording time"
           # Convert deskshare video and put into cutted_deskshare path just to make the logic more consistent
           BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, cutted_deskshare)
-        end
-      # Deskshare started before recording
+        end      
       elsif (deskshare_start_time < record_start_time)
+        # Deskshare started before recording
         deskshare_start_time_padding = video_processed_time / 1000.0
 
-        # Deskshare ended during recording.
         if (deskshare_stop_time <= record_stop_time)
+          # Deskshare ended during recording.
+          BigBlueButton.logger.info "Deskshare video started before recording started and ended during recording time"
           trim_start_time = record_start_time - deskshare_start_time
           trim_video_duration = deskshare_stop_time - record_start_time
           BigBlueButton.logger.info "Trimming video: start #{trim_start_time}ms duration #{trim_video_duration}ms"
           BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, deskshare_mpg)
-          BigBlueButton.trim_video(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)
-        # Deskshare ended after recording.
+          BigBlueButton.trim_video_no_log(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)        
+          BigBlueButton.logger.info "Video Trimmed!"
         else
+          # Deskshare ended after recording.
+          BigBlueButton.logger.info "Deskshare video started before recording started and ended after recording stoped"
           trim_start_time = record_start_time - deskshare_start_time
           trim_video_duration = record_stop_time - record_start_time
           BigBlueButton.logger.info "Trimming video: start #{trim_start_time}ms duration #{trim_video_duration}ms"
           BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, deskshare_mpg)
-          BigBlueButton.trim_video(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)
+          BigBlueButton.trim_video_no_log(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)
+          BigBlueButton.logger.info "Video Trimmed!"
         end
       end
 
@@ -250,10 +258,10 @@ if File.exists?(recorder_done)
         FileUtils.rm recorded_screen_raw_target_file
         FileUtils.mv(raw_merged_video, recorded_screen_raw_target_file)
       end
-    end
 
-    if File.exists?(cutted_deskshare)
-      FileUtils.rm (cutted_deskshare)
+      if File.exists?(cutted_deskshare)
+        FileUtils.rm cutted_deskshare
+      end
     end
 
     video_processed_time += record_stop_time - record_start_time

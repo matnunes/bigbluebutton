@@ -53,6 +53,18 @@ module BigBlueButton
     # TODO: check for result, raise an exception when there is an error
   end
 
+  # Generates a new video file given a start point and a duration without logging the process status
+  #   start - start point of the video_in, in milisseconds
+  #   duration - duration of the new video file, in milisseconds
+  #   video_in - the video to be used as base
+  #   video_out - the resulting new video
+  def self.trim_video_no_log(start, duration, video_in, video_out)
+    BigBlueButton.logger.info("Task: Trimming video")
+    command = "ffmpeg -loglevel quiet -nostats -i #{video_in} -vcodec copy -acodec copy -ss #{BigBlueButton.ms_to_strtime(start)} -t #{BigBlueButton.ms_to_strtime(duration)} #{video_out}"
+    BigBlueButton.execute(command)  
+    # TODO: check for result, raise an exception when there is an error
+  end
+
   # Create a blank video using Flash Screen Video codec of specific length
   #   length - length of blank video in seconds
   #   rate - the frame rate of the video
