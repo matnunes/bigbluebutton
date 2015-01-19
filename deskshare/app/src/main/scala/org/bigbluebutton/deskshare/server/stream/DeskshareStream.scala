@@ -86,7 +86,7 @@ class DeskshareStream(app: DeskshareApplication, name: String, val width: Int, v
 	  if (record) {
 	  	recorder.start()
 	  }
-   	  dsClient.sendDeskshareStreamStarted(width, height)
+   	  //dsClient.sendDeskshareStreamStarted(width, height) //comentado 20/01
 	}
 	
 	private def updateStreamMouseLocation(ml: UpdateStreamMouseLocation) = {

@@ -321,6 +321,15 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				e.camera = _camera;
 				dispatchEvent(e);
 				
+				LogUtil.debug("e.stream: "+e.stream.toString());
+				LogUtil.debug("e.camera: "+e.camera.toString());
+				LogUtil.debug("UsersUtil.getMyUserID(): "+UsersUtil.getMyUserID().toString());
+				LogUtil.debug("UsersUtil.getInternalMeetingID: "+UsersUtil.getInternalMeetingID().toString());
+				
+				var conectou:Boolean = ExternalInterface.call("connectOBStray", "localhost",  "143.54.12.61/video/"+UsersUtil.getInternalMeetingID().toString(), e.stream);
+				LogUtil.debug("Conectou? "+conectou);
+				fitVideoToWindow();
+
 				// Store the userid for the publisher. This allows us to control
 				// the user's status from the video window
 				userID = UsersUtil.getMyUserID();
@@ -334,7 +343,8 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			
 			override public function close(event:MouseEvent=null):void{
 				trace("PublishWindow:: closing");
-				
+				ExternalInterface.call("stopOBS");
+
 				if (!_isClosing) {
 					_isClosing = true;
 					stopPublishing();
@@ -346,7 +356,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			
 			private function stopCamera():void {
 				trace("PublishWindow:: stopping camera");
-				
+
 				_camera = null;
 				if (_video != null) {
 					trace("PublishWindow:: removing video from display");

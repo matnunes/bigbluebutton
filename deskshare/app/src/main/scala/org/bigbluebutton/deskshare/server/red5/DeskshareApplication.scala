@@ -222,7 +222,7 @@ class DeskshareApplication(streamManager: StreamManager, deskShareServer: DeskSh
 
 	override def streamBroadcastStart(stream:IBroadcastStream) {
 		var pubName:String = stream.getPublishedName() 
-		streamManager.addObsStream(stream.getPublishedName(), 960, 540);
+		streamManager.addObsStream(stream.getPublishedName(), 800, 450);
 		myStream = stream
 		super.streamBroadcastStart(stream) 
 	    logger.info("==============> streamBroadcastStart [ %s ]", pubName)
