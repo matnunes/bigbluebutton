@@ -183,15 +183,22 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				//abort calling deskshare applet (desktop sharing will be handled by OBS)
 				//ExternalInterface.call("startApplet", uri, room, fullScreen, true /*useSVC2Check.selected*/);
 
-				var conectou:Boolean = false;
-				conectou = ExternalInterface.call("connectOBStray", "localhost", uri, room);
-				if (conectou)
-					ExternalInterface.call("startStreamingOBS", "");
+				if (ExternalInterface.available) {
+					//var conectou:Boolean = ExternalInterface.call("connectOBStray", "localhost", uri, room, dsOptions.defaultWidth, dsOptions.defaultHeight);
+					var conectou:Boolean = ExternalInterface.call("connectOBStray", "localhost", "143.54.12.61/deskShare", room);
+					//todo: verificar chamada ao callback do connect no javascript
+					// if (conectou)
+					//{
+						// ExternalInterface.call("setupDisplay",1);
+						// ExternalInterface.call("setupDisplaySize", 800, 450);
+						// ExternalInterface.call("startStreamingOBS");
+					//}
+				}
 
-				startPreviewStream(connection, room, 960, 540);
+				startPreviewStream(connection, room, 800, 450);
 				var streamEvent:StreamEvent = new StreamEvent(StreamEvent.START);
-				streamEvent.videoWidth = 960;
-				streamEvent.videoHeight = 540;
+				streamEvent.videoWidth = 800;
+				streamEvent.videoHeight = 450;
 				dispatchEvent(streamEvent);
 			}
 			
@@ -247,7 +254,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				dispatchEvent(streamEvent);
 			}
 			
-			private function startPreviewStream(nc:NetConnection, streamName:String, capWidth:Number, capHeight:Number):void{				
+			private function startPreviewStream(nc:NetConnection, streamName:String, capWidth:Number, capHeight:Number):void{ 
 				streaming = true;
 				
 				// Store capture dimensions so we can position cursor properly.
@@ -256,7 +263,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				
 				videoHolder = new UIComponent();
 				
-				var vidW:Number = captureWidth;
+				var vidW:Number = captureWidth;				
 				var vidH:Number = captureHeight;
 				
 				// Don't scale if capture dimension is smaller than window.

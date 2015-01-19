@@ -26,6 +26,8 @@ package org.bigbluebutton.modules.deskshare.model
 		[Bindable] public var autoStart:Boolean = false;
 		[Bindable] public var autoFullScreen:Boolean = false;
 		[Bindable] public var baseTabIndex:int;
+		[Bindable] public var defaultHeight:int;
+		[Bindable] public var defaultWidth:int;
 		
 		public function parseOptions():void {
 			var vxml:XML = BBB.getConfigForModule("DeskShareModule");
@@ -44,6 +46,18 @@ package org.bigbluebutton.modules.deskshare.model
 				}
 				if (vxml.@showButton != undefined){
 					showButton = (vxml.@showButton.toString().toUpperCase() == "TRUE") ? true : false; 
+				}
+				if (vxml.@defaultHeight != undefined) {
+					defaultHeight = vxml.@defaultHeight;
+				}
+				else{
+					defaultHeight = 800;
+				}
+				if (vxml.@defaultWidth != undefined) {
+					defaultWidth = vxml.@defaultWidth;
+				}
+				else{
+					defaultWidth = 450;
 				}
 			}
 		}
