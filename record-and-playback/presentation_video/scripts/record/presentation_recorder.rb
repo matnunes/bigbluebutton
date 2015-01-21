@@ -35,6 +35,13 @@ metadata_xml = opts[:metadata_xml]
 meeting_id = Pathname(metadata_xml).each_filename.to_a[-2]
 display_id = opts[:display_id]
 
+log_dir = "/var/log/bigbluebutton/presentation_recorder/"
+if not Dir.exists?(log_dir)
+    FileUtils.mkdir_p log_dir
+end
+
+BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_recorder/process-#{meeting_id}.log", 'daily' )
+
 # This script lives in scripts/archive/steps while properties.yaml lives in scripts/
 bbb_props = YAML::load(File.open('../../core/scripts/bigbluebutton.yml'))
 $recording_dir = bbb_props['recording_dir']
@@ -42,11 +49,6 @@ $published_dir = bbb_props['published_dir']
 $unpublished_dir = bbb_props['unpublished_dir']
 
 target_dir = "#{$recording_dir}/process/presentation_recorder/#{meeting_id}"
-
-log_dir = "/var/log/bigbluebutton/presentation_recorder/"
-if not Dir.exists?(log_dir)
-    FileUtils.mkdir_p log_dir
-end
 
 # This method is based on bigbluebutton-config/bin/bbb-record and its rebuild function
 def presentation_video_restart(meeting_id)
@@ -93,7 +95,7 @@ def presentation_video_restart(meeting_id)
 
 end
 
-BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_recorder/process-#{meeting_id}.log", 'daily' )
+BigBlueButton.logger.info("Testing if recording never processed.")
 
 process_done = "#{$recording_dir}/status/processed/#{meeting_id}-presentation_recorder.done"
 
@@ -105,7 +107,9 @@ if not FileTest.directory?(process_done)
   video_recorder = BigBlueButton::VideoRecorder.new()
   video_recorder.target_dir = target_dir
   begin
+    BigBlueButton.logger.info "Starting video recorder."
     video_recorder.record(metadata_xml, display_id)
+    BigBlueButton.logger.info "Video recorder done."
 
     # After recording the meeting, we force the process and publish of presentation_video to restart
     presentation_video_restart(meeting_id)

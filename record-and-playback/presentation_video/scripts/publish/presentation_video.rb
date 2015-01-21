@@ -50,6 +50,9 @@ if ($playback == "presentation_video")
   presentation_video_props = YAML::load(File.open('presentation_video.yml'))
   publish_dir = presentation_video_props['publish_dir']
 
+  recorder_props = YAML::load(File.open('mconf-presentation-recorder.yml'))
+  presentation_recorder_dir = recorder_props['presentation_recorder_dir']
+
   raw_archive_dir = "#{recording_dir}/raw/#{$meeting_id}"
   process_dir = "#{recording_dir}/process/presentation_video/#{$meeting_id}"  
   target_dir = "#{recording_dir}/publish/presentation_video/#{$meeting_id}"
@@ -58,7 +61,8 @@ if ($playback == "presentation_video")
     BigBlueButton.logger.info("Creating target dir #{target_dir}")
     FileUtils.mkdir_p target_dir
 
-    metadata_xml = "#{process_dir}/metadata.xml"
+    presentation_recorder_meeting_dir = "#{presentation_recorder_dir}/#{$meeting_id}"
+    metadata_xml = "#{presentation_recorder_meeting_dir}/metadata.xml"
     BigBlueButton.logger.info "Parsing #{metadata_xml}"
     doc = nil
     begin
