@@ -58,7 +58,7 @@ module BigBlueButton
   #   duration - duration of the new video file, in milisseconds
   #   video_in - the video to be used as base
   #   video_out - the resulting new video
-  def self.trim_video_no_log(start, duration, video_in, video_out)
+  def self.trim_video_quiet(start, duration, video_in, video_out)
     BigBlueButton.logger.info("Task: Trimming video")
     command = "ffmpeg -loglevel quiet -nostats -i #{video_in} -vcodec copy -acodec copy -ss #{BigBlueButton.ms_to_strtime(start)} -t #{BigBlueButton.ms_to_strtime(duration)} #{video_out}"
     BigBlueButton.execute(command)  

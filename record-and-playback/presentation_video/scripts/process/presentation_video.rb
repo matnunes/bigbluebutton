@@ -154,7 +154,7 @@ if File.exists?(recorder_done)
 
           trim_video_duration = record_stop_time - deskshare_start_time
           BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, deskshare_mpg)
-          BigBlueButton.trim_video_no_log(0, trim_video_duration, deskshare_mpg, cutted_deskshare)
+          BigBlueButton.trim_video_quiet(0, trim_video_duration, deskshare_mpg, cutted_deskshare)
           BigBlueButton.logger.debug "Video Trimmed!"
         else
           BigBlueButton.logger.info "Deskshare video started and ended within recording time"
@@ -172,7 +172,7 @@ if File.exists?(recorder_done)
           trim_video_duration = deskshare_stop_time - record_start_time
           BigBlueButton.logger.debug "Trimming video: start #{trim_start_time}ms duration #{trim_video_duration}ms"
           BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, deskshare_mpg)
-          BigBlueButton.trim_video_no_log(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)        
+          BigBlueButton.trim_video_quiet(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)        
           BigBlueButton.logger.debug "Video Trimmed!"
         else
           # Deskshare ended after recording.
@@ -181,7 +181,7 @@ if File.exists?(recorder_done)
           trim_video_duration = record_stop_time - record_start_time
           BigBlueButton.logger.debug "Trimming video: start #{trim_start_time}ms duration #{trim_video_duration}ms"
           BigBlueButton.convert_flv_to_mpg(deskshare_flv_file, deskshare_mpg)
-          BigBlueButton.trim_video_no_log(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)
+          BigBlueButton.trim_video_quiet(trim_start_time, trim_video_duration, deskshare_mpg, cutted_deskshare)
           BigBlueButton.logger.debug "Video Trimmed!"
         end
       end
@@ -248,7 +248,7 @@ if File.exists?(recorder_done)
 
       raw_merged_video = "#{target_dir}/recorded_screen_raw_with_deskshare.webm"
 
-      command = "ffmpeg -i #{recorded_screen_raw_target_file} -i #{cutted_deskshare} -filter_complex \"
+      command = "ffmpeg -loglevel quiet -nostats -i #{recorded_screen_raw_target_file} -i #{cutted_deskshare} -filter_complex \"
                   [0:v] setpts=PTS-STARTPTS [presentation_video];
                   [1:v] setpts=PTS-STARTPTS+#{deskshare_start_time_padding}/TB, scale=#{scaled_width}:#{scaled_height}, 
                   pad=width=#{max_deskshare_width}:height=#{max_deskshare_height}:x=#{width_offset}:y=#{height_offset}:color=white [deskshare];
