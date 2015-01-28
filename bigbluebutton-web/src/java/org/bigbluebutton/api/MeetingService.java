@@ -430,7 +430,7 @@ public class MeetingService implements MessageListener {
 	public void processRecording(String meetingId) {
 		log.debug("Process recording for [{}]", meetingId);
 		recordingService.startIngestAndProcessing(meetingId);
-	}	
+	}
 		
 	public boolean isMeetingWithVoiceBridgeExist(String voiceBridge) {
 /*		Collection<Meeting> confs = meetings.values();
