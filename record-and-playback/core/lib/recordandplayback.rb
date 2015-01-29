@@ -31,17 +31,13 @@ require 'recordandplayback/deskshare_archiver'
 require 'recordandplayback/generators/events'
 require 'recordandplayback/generators/audio'
 require 'recordandplayback/generators/video'
+require 'recordandplayback/generators/mconf_processor'
 require 'recordandplayback/generators/matterhorn_processor'
 require 'recordandplayback/generators/audio_processor'
 require 'recordandplayback/generators/presentation'
 require 'open4'
 require 'pp'
 require 'absolute_time'
-
-# Background process available at:
-# https://github.com/timcharper/background_process
-# https://rubygems.org/gems/background_process
-require 'background_process'
 
 require 'timeout'
 require 'uri'

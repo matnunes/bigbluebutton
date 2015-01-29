@@ -389,6 +389,7 @@ begin
   archive_recorded_meeting(recording_dir)
   sanity_archived_meeting(recording_dir)
   process_archived_meeting(recording_dir)
+  process_recorded_video_meeting(recording_dir)
   publish_processed_meeting(recording_dir)
 
   BigBlueButton.logger.debug("rap-worker done")
@@ -398,12 +399,4 @@ rescue Exception => e
   e.backtrace.each do |traceline|
     BigBlueButton.logger.error(traceline)
   end
-end	
-
-props = YAML::load(File.open('bigbluebutton.yml'))
-recording_dir = props['recording_dir']
-archive_recorded_meeting(recording_dir)
-sanity_archived_meeting(recording_dir)
-process_archived_meeting(recording_dir)
-process_recorded_video_meeting(recording_dir)
-publish_processed_meeting(recording_dir)
+end
