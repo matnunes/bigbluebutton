@@ -96,7 +96,7 @@ def record_meeting
 
     BigBlueButton.logger.info "All meetings (published + unpublished):\n#{BigBlueButton.hash_to_str(all_meetings)}"
     BigBlueButton.logger.info "Meetings already recorded:\n#{BigBlueButton.hash_to_str(recorded_meetings)}"
-    BigBlueButton.logger.info "Meetings being recorder right now:\n#{BigBlueButton.hash_to_str(record_in_progress)}"
+    BigBlueButton.logger.info "Meetings being recorded right now:\n#{BigBlueButton.hash_to_str(record_in_progress)}"
     BigBlueButton.logger.info "Meetings to record:\n#{BigBlueButton.hash_to_str(meetings_to_record)}"
     BigBlueButton.logger.info "Meetings with error: \n#{BigBlueButton.hash_to_str(failed_meetings)}"
 
