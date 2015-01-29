@@ -30,6 +30,10 @@ sudo rm -f /etc/init.d/bbb-record-core
 sudo cp core/bbb-record-core /etc/init.d/bbb-record-core
 sudo chmod 0755 /etc/init.d/bbb-record-core
 
+sudo rm -f /etc/init.d/mconf-presentation-recorder
+sudo cp presentation_video/mconf-presentation-recorder.monit /etc/init.d/mconf-presentation-recorder
+sudo chmod 0755 /etc/init.d/mconf-presentation-recorder
+
 sudo rm -rf /var/bigbluebutton/playback/*
 function deploy_format() {
   local formats=$1
