@@ -71,8 +71,9 @@ def record_meeting
   while true
     BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-recorder-worker.log",'daily' )
 
-    all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/,'')}
-    
+    #all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/,'')}
+    all_meetings = Dir.glob("#{status_dir}/published/*-presentation.done").map {|v| File.basename(v).sub(/-presentation.done/, '')}
+
     recorded_meetings = Dir.glob("#{status_dir}/published/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
     recorded_meetings.each do |k|
       BigBlueButton.wait record_in_progress[k] if not record_in_progress[k].nil?
