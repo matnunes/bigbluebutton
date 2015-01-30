@@ -48,17 +48,19 @@ recorder_props = YAML::load(File.open('mconf-presentation-recorder.yml'))
 presentation_recorder_dir = recorder_props['presentation_recorder_dir']
 max_deskshare_height = recorder_props['record_window_height']
 
-FileUtils.mkdir_p "/var/log/bigbluebutton/presentation_video"
-BigBlueButton.logger = Logger.new("#{log_dir}/presentation_video/process-#{meeting_id}.log", 'daily' )
-
-# Create target_dir in advance in order to allow rap-worker to write its processing time in this folder
 target_dir = "#{recording_dir}/process/presentation_video/#{meeting_id}"
-FileUtils.mkdir_p target_dir
+if not FileTest.directory?(target_dir)
+  FileUtils.mkdir_p "#{log_dir}/presentation_video"
+  logger = Logger.new("#{log_dir}/presentation_video/process-#{meeting_id}.log", 'daily' )
+  BigBlueButton.logger = logger
 
-recorder_done = "#{recording_dir}/status/published/#{meeting_id}-presentation_recorder.done"
-BigBlueButton.logger.info "Testing if presentation_recorder finished for meeting #{meeting_id}"
+  if not File.exists? "#{recording_dir}/status/published/#{meeting_id}-presentation.done"
+    BigBlueButton.logger.info "Presentation format was not published yet, skipping it"
+    abort
+  end
 
-if File.exists?(recorder_done)
+  BigBlueButton.logger.info("Processing script presentation_video.rb")
+  FileUtils.mkdir_p target_dir
 
   # Check if publish of presentation_video failed and force it to be restarted after process is done.
   published_fail = "#{recording_dir}/status/published/#{meeting_id}-presentation_video.fail"    
