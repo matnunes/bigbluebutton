@@ -9,7 +9,7 @@ ApplicationControlBar {
   backgroundColor: #42444c;
   backgroundAlpha: 1;
   cornerRadius: 0;
-  dropShadowEnabled: true;
+  dropShadowEnabled: false;
   shadowDistance: 1;
   shadowDirection: center;
   dropShadowColor: #000000;
@@ -621,7 +621,8 @@ DataGrid {
 MDIWindow { /*None of the following properties are overridden by the MDIWindow class*/
 	backgroundSize: '100%';
 	
-	cornerRadius: 5;
+	cornerRadius: 2;
+	borderThickness: 1;
 	dropShadowEnabled: false;
 	titleStyleName: "mypanelTitle";
 	
