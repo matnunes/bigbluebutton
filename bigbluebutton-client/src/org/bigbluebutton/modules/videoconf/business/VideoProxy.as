@@ -70,7 +70,7 @@ package org.bigbluebutton.modules.videoconf.business
 		}
 		
     public function connect():void {
-      	nc.connect(_url);
+      nc.connect(_url);
     }
     
 		private function onAsyncError(event:AsyncErrorEvent):void{
