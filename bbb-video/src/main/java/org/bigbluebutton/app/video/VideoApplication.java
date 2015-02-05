@@ -61,8 +61,12 @@ public class VideoApplication extends MultiThreadedApplicationAdapter {
   @Override
 	public boolean roomConnect(IConnection conn, Object[] params) {
 		log.info("BBB Video roomConnect"); 
-  	String meetingId = ((String) params[0]).toString();
-  	String userId = ((String) params[1]).toString();
+	String meetingId = null;
+	String userId = null;
+	if (params.length >= 2) {
+	  	meetingId = ((String) params[0]).toString();
+	  	userId = ((String) params[1]).toString();
+	}
   	
   	Red5.getConnectionLocal().setAttribute("MEETING_ID", meetingId);
   	Red5.getConnectionLocal().setAttribute("USERID", userId);
@@ -71,8 +75,8 @@ public class VideoApplication extends MultiThreadedApplicationAdapter {
 		String connId = Red5.getConnectionLocal().getSessionId();
 		
 		Map<String, Object> logData = new HashMap<String, Object>();
-		logData.put("meetingId", meetingId);
-		logData.put("userId", userId);
+		logData.put("meetingId", getMeetingId());
+		logData.put("userId", getUserId());
 		logData.put("connType", connType);
 		logData.put("connId", connId);
 		logData.put("event", "user_joining_bbb_video");

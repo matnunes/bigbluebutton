@@ -290,7 +290,12 @@ package org.bigbluebutton.modules.videoconf.views
             var graphic:UserGraphicHolder = new UserGraphicHolder();
             graphic.userId = userId;
             graphic.addEventListener(FlexEvent.CREATION_COMPLETE, function(event:FlexEvent):void {
-                graphic.loadCamera(_options, camIndex, videoProfile);
+                if (camIndex == org.bigbluebutton.core.model.VideoProfile.CAMERA_INDEX_DESKTOP_SHARING) {
+                    LogUtil.debug("------------publishing OBS");
+                    graphic.publishObs(_options, videoProfile);
+                } else {
+                    graphic.loadCamera(_options, camIndex, videoProfile);                        
+                }
                 onChildAdd(event);
             });
             graphic.addEventListener(MouseEvent.CLICK, onVBoxClick);

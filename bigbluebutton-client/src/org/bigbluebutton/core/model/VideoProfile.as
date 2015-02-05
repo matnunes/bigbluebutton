@@ -24,6 +24,7 @@ package org.bigbluebutton.core.model
 
     public class VideoProfile
     {
+        public static const CAMERA_INDEX_DESKTOP_SHARING:int = 1;
         private var _fallbackLanguage:String;
 
         private static var _nextId:int = -1;

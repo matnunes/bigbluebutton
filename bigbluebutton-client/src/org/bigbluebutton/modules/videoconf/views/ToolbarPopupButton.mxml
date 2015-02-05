@@ -40,7 +40,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 	<mx:Script>
 		<![CDATA[
 			import com.asfusion.mate.events.Dispatcher;
-			
+			import org.bigbluebutton.common.LogUtil;
 			import mx.controls.Menu;
 			import mx.events.MenuEvent;
 			import mx.styles.StyleManager;
@@ -49,6 +49,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			import org.bigbluebutton.common.Images;
 			import org.bigbluebutton.core.events.LockControlEvent;
 			import org.bigbluebutton.core.managers.UserManager;
+		 	import org.bigbluebutton.core.model.VideoProfile;
 			import org.bigbluebutton.main.events.BBBEvent;
 			import org.bigbluebutton.main.events.ShortcutEvent;
 			import org.bigbluebutton.main.model.users.BBBUser;
@@ -85,10 +86,11 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 
 			private function init():void{
 				dispatcher = new Dispatcher();
-				numberOfCamerasOff = Camera.names.length;
+				numberOfCamerasOff = Camera.names.length+1;
 				for(var i:int = 0; i < Camera.names.length; i++) {
 					dp.push({label: Camera.names[i], status: OFF_STATE});
 				}
+				dp.push({label: "Deskcapture", status: OFF_STATE});
 
 				dataMenu = Menu.createMenu(this, dp, false);
 				dataMenu.addEventListener("itemClick", changeHandler);
@@ -216,6 +218,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				if(dp[event.index].status == ON_STATE) {
 					var stopShareCameraRequestEvent:StopShareCameraRequestEvent = new StopShareCameraRequestEvent();
 					stopShareCameraRequestEvent.camId = event.index;
+					LogUtil.debug("=========stopShareCameraRequestEvent.camId = event.index"+event.index);
 					dispatchEvent(stopShareCameraRequestEvent);
 				}
 				else {

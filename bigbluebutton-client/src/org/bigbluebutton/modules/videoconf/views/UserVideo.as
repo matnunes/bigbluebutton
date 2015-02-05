@@ -12,6 +12,7 @@ package org.bigbluebutton.modules.videoconf.views
   import flash.net.NetConnection;
   import flash.net.NetStream;
   import mx.utils.ObjectUtil;
+  import org.bigbluebutton.common.LogUtil;
 
   import org.bigbluebutton.core.BBB;
   import org.bigbluebutton.core.model.VideoProfile;
@@ -52,6 +53,15 @@ package org.bigbluebutton.modules.videoconf.views
       startPublishing();
     }
 
+    public function startPublishObs(videoProfile:VideoProfile):void {
+      _camIndex = 1001;
+      _videoProfile = videoProfile;
+      setOriginalDimensions(_videoProfile.width, _videoProfile.height);
+      
+      invalidateDisplayList();
+      startPublishing();
+    }
+
     private function newStreamName():String {
       /**
        * Add timestamp to create a unique stream name. This way we can record   
@@ -87,7 +97,17 @@ package org.bigbluebutton.modules.videoconf.views
 
       var e:StartBroadcastEvent = new StartBroadcastEvent();
       e.stream = _streamName;
-      e.camera = _video.getCamera();
+      if (_camIndex != 1001) //desktop capture
+        {
+          e.camera = _video.getCamera();
+        }
+      else
+        {
+          e.isDeskcapture = true;
+        }
+
+        LogUtil.debug("************************ StartBroadcastEvent: "+e.stream);
+
       e.videoProfile = _videoProfile;
       _dispatcher.dispatchEvent(e);
     }
@@ -123,6 +143,7 @@ package org.bigbluebutton.modules.videoconf.views
       var e:StopBroadcastEvent = new StopBroadcastEvent();
       e.stream = _streamName;
       e.camId = _camIndex;
+              LogUtil.debug("************************ stopPublishing: "+_camIndex);
       _dispatcher.dispatchEvent(e);
     }
 

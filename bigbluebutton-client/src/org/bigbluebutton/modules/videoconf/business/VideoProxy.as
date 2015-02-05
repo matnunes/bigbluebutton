@@ -32,7 +32,8 @@ package org.bigbluebutton.modules.videoconf.business
 	import flash.system.Capabilities;
 	
 	import mx.collections.ArrayCollection;
-	
+  	import flash.external.ExternalInterface;
+
 	import org.bigbluebutton.common.LogUtil;
 	import org.bigbluebutton.core.BBB;
 	import org.bigbluebutton.core.UsersUtil;
@@ -53,6 +54,7 @@ package org.bigbluebutton.modules.videoconf.business
 		private var _url:String;
 		private var camerasPublishing:Object = new Object();
 		private var connected:Boolean = false;
+		private var deskcaptureStream:String = null;
     
 		private function parseOptions():void {
 			videoOptions = new VideoConfOptions();
@@ -115,7 +117,16 @@ package org.bigbluebutton.modules.videoconf.business
 			ns.addEventListener( IOErrorEvent.IO_ERROR, onIOError );
 			ns.addEventListener( AsyncErrorEvent.ASYNC_ERROR, onAsyncError );
 			ns.client = this;
-			//ns.attachCamera(e.camera);
+			if (e.isDeskcapture)
+			{
+				deskcaptureStream = e.stream;
+				ExternalInterface.call("connectOBStray", "localhost", _url, deskcaptureStream);
+				ns.play(deskcaptureStream);
+			}
+			else
+			{
+				ns.attachCamera(e.camera);
+			}
 //		Uncomment if you want to build support for H264. But you need at least FP 11. (ralam july 23, 2011)	
 //			if (Capabilities.version.search("11,0") != -1) {
 			if ((BBB.getFlashPlayerVersion() >= 11) && e.videoProfile.enableH264) {
@@ -151,20 +162,30 @@ package org.bigbluebutton.modules.videoconf.business
 				h264.setProfileLevel(h264profile, h264Level);
 				ns.videoStreamSettings = h264;
 			}
-			
-			//ns.publish(e.stream);
+			if (!(e.isDeskcapture))
+			{
+				ns.publish(e.stream);
+			}
 			camerasPublishing[e.stream] = ns;
 		}
 		
 		public function stopBroadcasting(stream:String):void{
       trace("Closing netstream for webcam publishing");
-      			if (camerasPublishing[stream] != null) {
-	      			var ns:NetStream = camerasPublishing[stream];
-				ns.attachCamera(null);
-				ns.close();
-				ns = null;
-				delete camerasPublishing[stream];
-			}	
+      		if (deskcaptureStream == stream)
+      		{
+				ExternalInterface.call("stopOBS");
+				deskcaptureStream = null;
+      		}
+      		else
+      		{
+				if (camerasPublishing[stream] != null) {
+		      		var ns:NetStream = camerasPublishing[stream];
+					ns.attachCamera(null);
+					ns.close();
+					ns = null;
+					delete camerasPublishing[stream];
+				}
+			}
 		}
 
 		public function stopAllBroadcasting():void {
@@ -175,6 +196,11 @@ package org.bigbluebutton.modules.videoconf.business
 				ns = null;
 			}
 			camerasPublishing = new Object();
+			if (deskcaptureStream != null)
+      		{
+				ExternalInterface.call("stopOBS");
+				deskcaptureStream = null;
+      		}
 		}
 
 		public function disconnect():void {
