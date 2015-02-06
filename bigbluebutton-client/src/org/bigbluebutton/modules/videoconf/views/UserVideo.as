@@ -75,7 +75,7 @@ package org.bigbluebutton.modules.videoconf.views
 
     protected function getVideoProfile(stream:String):VideoProfile {
       trace("Parsing stream name [" + stream + "]");
-      var pattern:RegExp = new RegExp("([A-Za-z0-9]+)-([A-Za-z0-9]+)-\\d+", "");
+      var pattern:RegExp = new RegExp("(\\w+)-(\\w+)-\\d+", "");
       if (pattern.test(stream)) {
         trace("The stream name is well formatted");
         trace("Video profile resolution is [" + pattern.exec(stream)[1] + "]");
@@ -160,7 +160,7 @@ package org.bigbluebutton.modules.videoconf.views
       _ns.receiveAudio(false);
       
       _videoProfile = getVideoProfile(streamName);
-      trace("Remote video profile: " + _videoProfile.toString());
+      LogUtil.debug("Remote video profile: " + _videoProfile.toString());
       if (_videoProfile == null) {
         throw("Invalid video profile");
         return;

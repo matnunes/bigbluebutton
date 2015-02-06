@@ -9,6 +9,7 @@ var bcastPath = "";
 
 ///funcoes para uso do OBS
 
+//recebe o host, url, path, monitor (tela), e bitrate;
 function connectOBStray(host, url, path) {
         bcastUrl = url;
         bcastPath = path;
