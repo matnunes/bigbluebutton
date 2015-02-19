@@ -21,11 +21,13 @@ module BigBlueButton
 		attr_accessor :xvfb
 		attr_accessor :firefox
 		attr_accessor :recordmydesktop
+		attr_accessor :ff_profile_path
 
 		def initialize
 			@xvfb = nil
 			@firefox = nil
 			@recordmydesktop = nil
+			@ff_profile_path = nil
 		end
 
 		def parse_metadata(url)
@@ -106,13 +108,28 @@ module BigBlueButton
 			@xvfb = BigBlueButton.execute_async(command)
 
 			firefox_home = "/tmp/firefox_presentation_video"
-			firefox_profile_dir = "#{firefox_home}/new_profile/"
-			FileUtils.rm_rf firefox_home
-			FileUtils.mkdir_p firefox_profile_dir
+			new_profile_name = "new_profile_#{@display_id}"
+			@ff_profile_path = "#{firefox_home}/#{new_profile_name}"
+			command = "HOME=#{firefox_home} firefox -CreateProfile \"#{new_profile_name} #{@ff_profile_path}\""
+			BigBlueButton.execute(command)
+
+			# http://forums.mozillazine.org/viewtopic.php?f=38&t=2864879
+			open("#{firefox_home}/#{new_profile_name}/prefs.js", 'a') { |f|
+				f << "user_pref(\"toolkit.telemetry.prompted\", 2);\n"
+				f << "user_pref(\"toolkit.telemetry.rejected\", true);\n"
+				f << "user_pref(\"toolkit.telemetry.enabled\", false);\n"
+				f << "user_pref(\"datareporting.healthreport.service.enabled\", false);\n"
+				f << "user_pref(\"datareporting.healthreport.uploadEnabled\", false);\n"
+				f << "user_pref(\"datareporting.healthreport.service.firstRun\", false);\n"
+				f << "user_pref(\"datareporting.healthreport.logging.consoleEnabled\", false);\n"
+				f << "user_pref(\"datareporting.policy.dataSubmissionEnabled\", false);\n"
+				f << "user_pref(\"datareporting.policy.dataSubmissionPolicyResponseType\", \"accepted-info-bar-dismissed\");\n"
+				f << "user_pref(\"datareporting.policy.dataSubmissionPolicyAccepted\", false);\n"
+			}
 
 			firefox_width = $props['firefox_width']
 			firefox_height = $props['firefox_height']
-			command = "HOME=#{firefox_home} firefox -profile #{firefox_profile_dir} -safe-mode -width #{firefox_width} -height #{firefox_height} -new-window #{link}"
+			command = "HOME=#{firefox_home} firefox -P #{new_profile_name} -safe-mode -width #{firefox_width} -height #{firefox_height} -new-window #{link}"
 			@firefox = BigBlueButton.execute_async(command)
 
 			firefox_safemode_wait = $props['firefox_safemode_wait']
@@ -177,7 +194,9 @@ module BigBlueButton
 				'-t', "#{@duration}",
 				'-f', 'x11grab',
 				'-s', "#{width}x#{height}",
+#				'-s', "#{$props['firefox_width']}x#{$props['firefox_height']}",
 				'-i', ":#{@display_id}.0+#{x},#{y}",
+#				'-i', ":#{@display_id}.0+0,0",
 				'-codec', BigBlueButton::EDL::Video::FFMPEG_WF_CODEC,
 				'-q:v', '2',
 				'-g', '240',
@@ -208,6 +227,11 @@ module BigBlueButton
 			BigBlueButton.kill(@xvfb)
 			BigBlueButton.wait(@xvfb)
 			@xvfb = nil
+
+			if ! @ff_profile_path.nil?
+				FileUtils.rm_rf @ff_profile_path
+				@ff_profile_path = nil
+			end
 		end
 
 		def force_kill(proc)
