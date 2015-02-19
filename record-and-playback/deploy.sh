@@ -18,17 +18,11 @@
 #
 set -xe
 
-# sudo service mconf-presentation-recorder stop
-
 sudo cp core/Gemfile /usr/local/bigbluebutton/core/Gemfile
 sudo rm -rf /usr/local/bigbluebutton/core/lib
 sudo cp -r core/lib /usr/local/bigbluebutton/core/
 sudo rm -rf /usr/local/bigbluebutton/core/scripts
 sudo cp -r core/scripts /usr/local/bigbluebutton/core/
-
-sudo rm -f /etc/init.d/bbb-record-core
-sudo cp core/bbb-record-core /etc/init.d/bbb-record-core
-sudo chmod 0755 /etc/init.d/bbb-record-core
 
 sudo rm -rf /var/bigbluebutton/playback/*
 function deploy_format() {
@@ -68,5 +62,3 @@ pushd . > /dev/null
 cd /usr/local/bigbluebutton/core/
 sudo bundle install
 popd > /dev/null
-
-# sudo service mconf-presentation-recorder start
