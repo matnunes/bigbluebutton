@@ -50,13 +50,10 @@ module BigBlueButton
 		    file_repo = "#{uri.scheme}://#{uri.host}/presentation/#{record_id}"
 
 				BigBlueButton.try_download "#{file_repo}/video/webcams.webm", "#{@target_dir}/webcams.webm"
-				BigBlueButton.try_download "#{file_repo}/video/webcams_no_deskshare.webm", "#{@target_dir}/webcams_no_deskshare.webm"
 		    BigBlueButton.try_download "#{file_repo}/audio/audio.webm", "#{@target_dir}/audio.webm"
 
 		    audio_file = nil
-		    if File.exist?("#{@target_dir}/webcams_no_deskshare.webm")
-		      audio_file = "#{@target_dir}/webcams_no_deskshare.webm"
-		    elsif File.exist?("#{@target_dir}/webcams.webm")
+		    if File.exist?("#{@target_dir}/webcams.webm")
 		      audio_file = "#{@target_dir}/webcams.webm"
 		    elsif File.exist?("#{@target_dir}/audio.webm")
 		      audio_file = "#{@target_dir}/audio.webm"
@@ -66,15 +63,14 @@ module BigBlueButton
 		    end	
 
 		    BigBlueButton.logger.info "Will extract audio lenght from #{audio_file}"
-		    FFMPEG.ffmpeg_binary = "/usr/local/bin/ffmpeg"
-		    BigBlueButton.logger.info "Setting FFMPEG path to #{FFMPEG.ffmpeg_binary}"
+
 		    # Must transform to ms
 		    duration = "#{BigBlueButton.get_video_duration(audio_file)}".to_f * 1000
 		    BigBlueButton.logger.info "Extracted duration: #{duration}"
 
 		    BigBlueButton.logger.info "Deleting #{audio_file}"
-		    FileUtils.rm_rf audio_file			    
-			end			
+		    FileUtils.rm_rf audio_file
+			end
 
 			BigBlueButton.logger.info "record_id: #{record_id}"
 			BigBlueButton.logger.info "format   : #{format}"

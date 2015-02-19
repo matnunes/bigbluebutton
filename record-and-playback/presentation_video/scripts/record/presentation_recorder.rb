@@ -53,13 +53,13 @@ target_dir = "#{$recording_dir}/process/presentation_recorder/#{meeting_id}"
 # This method is based on bigbluebutton-config/bin/bbb-record and its rebuild function
 def presentation_video_restart(meeting_id)
   BigBlueButton.logger.info "Marking to restart presentation_video for this meeting:"
-  BigBlueButton.logger.info "-Deleting published and unpublished folder of presentation_video for meeting #{meeting_id}"
+  BigBlueButton.logger.info "Deleting published and unpublished folder of presentation_video for meeting #{meeting_id}"
 
   # Delete (un)published files. It force presentation_video restart even if it was already processed
   FileUtils.rm_rf "#{$published_dir}/presentation_video/#{meeting_id}"
   FileUtils.rm_rf "#{$unpublished_dir}/presentation_video/#{meeting_id}"
 
-  BigBlueButton.logger.info "-Deleting done and fail status files of presentation_video for meeting #{meeting_id}"
+  BigBlueButton.logger.info "Deleting done and fail status files of presentation_video for meeting #{meeting_id}"
   
   # Delete status files
   FileUtils.rm_f "#{$recording_dir}/status/processed/#{meeting_id}-presentation_video.done"
