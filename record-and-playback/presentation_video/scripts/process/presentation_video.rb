@@ -63,7 +63,7 @@ if not FileTest.directory?(target_dir)
     BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/presentation_video/process-#{meeting_id}.log", 'daily' )
 
     presentation_recorder_dir = "#{recording_dir}/process/presentation_recorder/#{meeting_id}"
-    recorded_screen_raw_file = "#{presentation_recorder_dir}/recorded_screen_raw.webm"
+    recorded_screen_raw_file = "#{presentation_recorder_dir}/recorded_screen_raw.ts"
 
     FileUtils.cp_r "#{presentation_recorder_dir}/metadata.xml", "#{target_dir}/metadata.xml"
     FileUtils.cp_r "#{recorded_screen_raw_file}", "#{target_dir}/"

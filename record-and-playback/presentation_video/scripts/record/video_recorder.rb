@@ -170,7 +170,7 @@ module BigBlueButton
 
 		def record_with_ffmpeg(width, height, x, y, output)
 			BigBlueButton.logger.info "Recording with ffmpeg"
-			ffmpeg_cmd = BigBlueButton::EDL::FFMPEG
+			ffmpeg_cmd = [*BigBlueButton::EDL::FFMPEG]
 			ffmpeg_cmd += [
 				'-y',
 				'-an',
@@ -178,16 +178,18 @@ module BigBlueButton
 				'-f', 'x11grab',
 				'-s', "#{width}x#{height}",
 				'-i', ":#{@display_id}.0+#{x},#{y}",
-				'-c:v', 'libvpx',
-				'-qmin', '0', '-qmax', '50',
-				'-crf', '5', '-b:v', '1M',
+				'-codec', BigBlueButton::EDL::Video::FFMPEG_WF_CODEC,
+				'-q:v', '2',
+				'-g', '240',
+				'-pix_fmt', 'yuv420p',
+				'-r', BigBlueButton::EDL::Video::FFMPEG_WF_FRAMERATE,
 				"#{output}"
 			]
 			BigBlueButton.exec_ret(*ffmpeg_cmd)
 		end
 
 		def record_screen
-			recorded_screen_raw_file = "#{@target_dir}/recorded_screen_raw.webm"
+			recorded_screen_raw_file = "#{@target_dir}/recorded_screen_raw.ts"
 			BigBlueButton.logger.info("Raw file: #{recorded_screen_raw_file}")
 
 			record_window_width = $props['record_window_width']
