@@ -21,10 +21,6 @@
 # to /usr/local/bin. Add that to the path.
 ENV['PATH'] += ':/usr/local/bin'
 
-# Monit reduces the path, but we require tools that are often manually installed
-# to /usr/local/bin. Add that to the path.
-ENV['PATH'] += ':/usr/local/bin'
-
 require '../lib/recordandplayback'
 require 'rubygems'
 require 'yaml'
@@ -156,7 +152,7 @@ def process_archived_meeting(recording_dir)
       step_stop_time = BigBlueButton.monotonic_clock
       step_time = step_stop_time - step_start_time
 
-      if BigBlueButton.dir_exists? "#{recording_dir}/process/#{process_type}/#{meeting_id}/"
+      if BigBlueButton.dir_exists? "#{recording_dir}/process/#{process_type}/#{meeting_id}"
         IO.write("#{recording_dir}/process/#{process_type}/#{meeting_id}/processing_time", step_time)
       end
 
@@ -185,23 +181,6 @@ def process_archived_meeting(recording_dir)
   end
 end
 
-def done_to_meeting_id(path)
-	match = /(.*-.*)-(.*).done/.match path.sub(/.+\//, "")
-	return match[1]
-end
-
-def process_recorded_video_meeting(recording_dir)
-	to_process = Dir.glob("#{recording_dir}/status/processed/*-presentation_recorder.done").map {|v| done_to_meeting_id(v)}
-	processed = Dir.glob("#{recording_dir}/status/processed/*-presentation_video.done").map {|v| done_to_meeting_id(v)}
-
-	to_process.each do |meeting_id|
-		if not processed.include? meeting_id
-			command = "ruby process/presentation_video.rb -m #{meeting_id}"
-			BigBlueButton.execute command
-		end
-	end
-end
-
 def publish_processed_meeting(recording_dir)
   processed_done_files = Dir.glob("#{recording_dir}/status/processed/*.done")
 
@@ -223,6 +202,13 @@ def publish_processed_meeting(recording_dir)
     Dir.glob("publish/*.rb").sort.each do |publish_script|
       match2 = /([^\/]*).rb$/.match(publish_script)
       publish_type = match2[1]
+
+      # Do not try to publish a format that failed in the process phase
+      processed_done = "#{recording_dir}/status/processed/#{meeting_id}-#{publish_type}.done"
+      if !File.exists?(processed_done)
+        publish_succeeded = false
+        next
+      end
 
       published_done = "#{recording_dir}/status/published/#{meeting_id}-#{publish_type}.done"
       next if File.exists?(published_done)
@@ -262,37 +248,21 @@ def publish_processed_meeting(recording_dir)
     end
 
     if publish_succeeded
-      post_publish(meeting_id) 
-      #processed_done_files.each do |processed_done|
-      #  FileUtils.rm(processed_done)
-      #end
-
-      flow_process_done = "#{recording_dir}/status/processed/#{meeting_id}-#{process_type}.done"
-      if FileTest.exists?(flow_process_done)
-        FileUtils.rm(flow_process_done)
-      end
-
-      BigBlueButton.logger.debug "Done files for format #{process_type} deleted."
-      
+      post_publish(meeting_id)
+      # Clean up the process done files
       # Also clean up the publish and process work files
       Dir.glob("process/*.rb").sort.each do |process_script|
         match2 = /([^\/]*).rb$/.match(process_script)
         process_type = match2[1]
         this_processed_done = "#{recording_dir}/status/processed/#{meeting_id}-#{process_type}.done"
-        if File.exists?(this_processed_done)
-          FileUtils.rm(this_processed_done)
-        end
-        this_processed_dir = "#{recording_dir}/process/#{process_type}/#{meeting_id}"
-        if Dir.exists?(this_processed_dir)
-          FileUtils.rm_rf(this_processed_dir)
-        end
+        FileUtils.rm(this_processed_done)
+        FileUtils.rm_rf("#{recording_dir}/process/#{process_type}/#{meeting_id}")
       end
       Dir.glob("publish/*.rb").sort.each do |publish_script|
         match2 = /([^\/]*).rb$/.match(publish_script)
         publish_type = match2[1]
         FileUtils.rm_rf("#{recording_dir}/publish/#{publish_type}/#{meeting_id}")
       end
-
 
     end
   end
@@ -391,7 +361,6 @@ begin
   archive_recorded_meeting(recording_dir)
   sanity_archived_meeting(recording_dir)
   process_archived_meeting(recording_dir)
-  process_recorded_video_meeting(recording_dir)
   publish_processed_meeting(recording_dir)
 
   BigBlueButton.logger.debug("rap-worker done")
@@ -401,4 +370,4 @@ rescue Exception => e
   e.backtrace.each do |traceline|
     BigBlueButton.logger.error(traceline)
   end
-end
+end	

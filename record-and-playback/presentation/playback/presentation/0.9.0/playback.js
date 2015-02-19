@@ -112,7 +112,6 @@ replaceTimeOnUrl = function(secs) {
 
 var params = getUrlParameters();
 var MEETINGID = params['meetingId'];
-var INCLUDE_DESKSHARE = params['includeDeskshare'];
 var RECORDINGS = "/presentation/" + MEETINGID;
 var SLIDES_XML = RECORDINGS + '/slides_new.xml';
 var SHAPES_SVG = RECORDINGS + '/shapes.svg';
@@ -326,13 +325,7 @@ load_video = function(){
    video.setAttribute('class','webcam');  
 
    var webmsource = document.createElement("source");
-
-   if (INCLUDE_DESKSHARE == "false" && checkUrl(RECORDINGS + '/video/webcams_no_deskshare.webm') == true) {
-      webmsource.setAttribute('src', RECORDINGS + '/video/webcams_no_deskshare.webm');
-   } else {
-      webmsource.setAttribute('src', RECORDINGS + '/video/webcams.webm');
-   }
-
+   webmsource.setAttribute('src', RECORDINGS + '/video/webcams.webm');
    webmsource.setAttribute('type','video/webm; codecs="vp8.0, vorbis"');
    video.appendChild(webmsource);
 

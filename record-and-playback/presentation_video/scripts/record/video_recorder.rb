@@ -76,11 +76,6 @@ module BigBlueButton
 		    FileUtils.rm_rf audio_file			    
 			end			
 
-			# For our new format, we don't include the deskshare in the webcams video part.
-			# We need the '\' to add the URL parameter, otherwise the terminal won't include
-			# the new parameter.
-			link = link + "\\&includeDeskshare=false"
-
 			BigBlueButton.logger.info "record_id: #{record_id}"
 			BigBlueButton.logger.info "format   : #{format}"
 			BigBlueButton.logger.info "duration : #{duration} ms"
@@ -242,7 +237,7 @@ module BigBlueButton
 				self.tear_down
 
 				recording_dir = $bbb_props['recording_dir']
-				process_done = File.new("#{recording_dir}/status/published/#{@meeting_id}-presentation_recorder.done", "w")
+				process_done = File.new("#{recording_dir}/status/processed/#{@meeting_id}-presentation_recorder.done", "w")
 				process_done.write("Processed #{@meeting_id}")
 				process_done.close
 			rescue Exception => e

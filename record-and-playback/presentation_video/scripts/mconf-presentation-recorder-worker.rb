@@ -28,6 +28,8 @@ require 'yaml'
 require 'fileutils'
 require 'pathname'
 
+BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-recorder-worker.log",'daily' )
+
 $props = YAML::load(File.open('mconf-presentation-recorder.yml'))
 $bbb_props = YAML::load(File.open('bigbluebutton.yml'))
 
@@ -61,35 +63,32 @@ end
 def record_meeting
   published_dir = $bbb_props['published_dir']
   unpublished_dir = $bbb_props['unpublished_dir']
+  recording_dir = $bbb_props['recording_dir']
+  status_dir = "#{recording_dir}/status"
   presentation_recorder_dir = $props['presentation_recorder_dir']
   presentation_video_status_dir = $props['presentation_video_status_dir']
-
-  status_dir = "/var/bigbluebutton/recording/status"
 
   record_in_progress = Hash[(Dir.entries("#{presentation_recorder_dir}") - ['.', '..']).map {|v| [v, nil]}]
 
   while true
-    BigBlueButton.logger = Logger.new("/var/log/bigbluebutton/mconf-presentation-recorder-worker.log",'daily' )
-
     #all_meetings = Dir.glob("#{presentation_video_status_dir}/*.done").map {|v| File.basename(v).sub(/.done/,'')}
     all_meetings = Dir.glob("#{status_dir}/published/*-presentation.done").map {|v| File.basename(v).sub(/-presentation.done/, '')}
-
-    recorded_meetings = Dir.glob("#{status_dir}/published/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
+    recorded_meetings = Dir.glob("#{status_dir}/processed/*-presentation_recorder.done").map {|v| File.basename(v).sub(/-presentation_recorder.done/, '')}
     recorded_meetings.each do |k|
       BigBlueButton.wait record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k
     end
 
-    failed_meetings = Dir.glob("#{status_dir}/published/*-presentation_recorder.fail").map {|v| File.basename(v).sub(/-presentation_recorder.fail/, '')}
+    failed_meetings = Dir.glob("#{status_dir}/processed/*-presentation_recorder.fail").map {|v| File.basename(v).sub(/-presentation_recorder.fail/, '')}
     failed_meetings.each do |k|
       BigBlueButton.kill record_in_progress[k] if not record_in_progress[k].nil?
       record_in_progress.delete k
-      fail_file = "#{status_dir}/published/#{k}-presentation_recorder.fail"
+      fail_file = "#{status_dir}/processed/#{k}-presentation_recorder.fail"
       BigBlueButton.logger.info "Error file #{fail_file}"
       FileUtils.rm fail_file
 
-      done_file = "#{status_dir}/published/#{k}-presentation_recorder.done"
-      FileUtils.rm done_file if File.exists?(done_file)
+      done_file = "#{status_dir}/processed/#{k}-presentation_recorder.done"
+      FileUtils.rm_f done_file
     end
 
     meetings_to_record = all_meetings - recorded_meetings - record_in_progress.keys
@@ -141,9 +140,8 @@ def record_meeting
 end
 
 if not Dir.exists?("#{$props['presentation_recorder_dir']}")
-    BigBlueButton.logger.info("Presentation recorder dir #{$props['presentation_recorder_dir']} does not exists")
+    BigBlueButton.logger.info("Presentation recorder dir #{$props['presentation_recorder_dir']} does not exists, creating it")
     FileUtils.mkdir_p("#{$props['presentation_recorder_dir']}")
-    BigBlueButton.logger.info("Dir #{$props['presentation_recorder_dir']} created")
 end
 
 record_meeting

@@ -46,6 +46,7 @@ recording_dir = props['recording_dir']
 raw_archive_dir = "#{recording_dir}/raw/#{meeting_id}"
 log_dir = props['log_dir']
 
+
 target_dir = "#{recording_dir}/process/presentation/#{meeting_id}"
 if not FileTest.directory?(target_dir)
   FileUtils.mkdir_p "#{log_dir}/presentation"
@@ -113,40 +114,19 @@ if not FileTest.directory?(target_dir)
     end
   end
   
-  include_deskshare = false;
-  if (presentation_props['include_deskshare'] and !Dir["#{raw_archive_dir}/deskshare/*"].empty?)
-    BigBlueButton.logger.info "Including deskshare"
-    include_deskshare = true;
-  end
-
-  if !Dir["#{raw_archive_dir}/video/*"].empty? or include_deskshare #(presentation_props['include_deskshare'] and !Dir["#{raw_archive_dir}/deskshare/*"].empty?)
+  if !Dir["#{raw_archive_dir}/video/*"].empty? or (presentation_props['include_deskshare'] and !Dir["#{raw_archive_dir}/deskshare/*"].empty?)
     width = presentation_props['video_output_width']
     height = presentation_props['video_output_height']
     if !Dir["#{raw_archive_dir}/deskshare/*"].empty?
       width = presentation_props['deskshare_output_width']
       height = presentation_props['deskshare_output_height']
     end
-    # Create video with deskshare, if available
     BigBlueButton.process_multiple_videos(target_dir, temp_dir, meeting_id, width, height, presentation_props['audio_offset'], presentation_props['include_deskshare'])
-    BigBlueButton.logger.info "Video recorded"  
-
-    # Create also a video without deskshare, for meetings with deskshare
-    if include_deskshare
-      width = presentation_props['video_output_width']
-      height = presentation_props['video_output_height']
-      no_deskshare_video_dir = "#{target_dir}/no_deskshare"
-      FileUtils.mkdir_p no_deskshare_video_dir
-      BigBlueButton.process_multiple_videos(no_deskshare_video_dir, temp_dir, meeting_id, width, height, presentation_props['audio_offset'], false)      
-      FileUtils.mv "#{no_deskshare_video_dir}/webcams.webm", "#{no_deskshare_video_dir}/webcams_no_deskshare.webm"
-      BigBlueButton.logger.info "Video without deskshare recorded"     
-    end
   end
 
   process_done = File.new("#{recording_dir}/status/processed/#{meeting_id}-presentation.done", "w")
   process_done.write("Processed #{meeting_id}")
   process_done.close
-
-  BigBlueButton.logger.info "Process done!"
 #else
 #	BigBlueButton.logger.debug("Skipping #{meeting_id} as it has already been processed.")  
  rescue Exception => e

@@ -61,8 +61,7 @@ if ($playback == "presentation_video")
     BigBlueButton.logger.info("Creating target dir #{target_dir}")
     FileUtils.mkdir_p target_dir
 
-    presentation_recorder_meeting_dir = "#{presentation_recorder_dir}/#{$meeting_id}"
-    metadata_xml = "#{presentation_recorder_meeting_dir}/metadata.xml"
+    metadata_xml = "#{presentation_recorder_dir}/#{$meeting_id}/metadata.xml"
     BigBlueButton.logger.info "Parsing #{metadata_xml}"
     doc = nil
     begin
@@ -86,27 +85,7 @@ if ($playback == "presentation_video")
     metadata_xml.write(doc.to_xml(:indent => 2))
     metadata_xml.close
 
-    begin
-      FileUtils.cp_r("#{process_dir}/video.webm", "#{package_dir}/")
-    rescue Exception => e
-      BigBlueButton.logger.info("#{process_dir}/video.webm doesn't exists. Forcing process of presentation_video to re execute.")
-
-      # Delete fail file
-      process_fail="#{recording_dir}/status/processed/#{$meeting_id}-presentation_video.fail"
-      if File.exists?(process_fail)
-        FileUtils.rm(process_fail)
-      end
-
-      # Create sanity file to force process to be re executed
-      sanity_done = "#{recording_dir}/status/sanity/#{$meeting_id}.done"
-      if not File.exists?(sanity_done)
-        sanity_done_file = File.new(sanity_done, "w")
-        sanity_done_file.close
-      end      
-
-      BigBlueButton.logger.error "Something went wrong: #{$!}"
-      raise e
-    end
+    FileUtils.cp_r("#{process_dir}/video.webm", "#{package_dir}/")
 
     if not FileTest.directory?(publish_dir)
       FileUtils.mkdir_p publish_dir
