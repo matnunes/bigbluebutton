@@ -115,7 +115,7 @@ package org.bigbluebutton.modules.videoconf.business
 			ns.addEventListener( IOErrorEvent.IO_ERROR, onIOError );
 			ns.addEventListener( AsyncErrorEvent.ASYNC_ERROR, onAsyncError );
 			ns.client = this;
-			ns.attachCamera(e.camera);
+			//ns.attachCamera(e.camera);
 //		Uncomment if you want to build support for H264. But you need at least FP 11. (ralam july 23, 2011)	
 //			if (Capabilities.version.search("11,0") != -1) {
 			if ((BBB.getFlashPlayerVersion() >= 11) && e.videoProfile.enableH264) {
@@ -152,7 +152,7 @@ package org.bigbluebutton.modules.videoconf.business
 				ns.videoStreamSettings = h264;
 			}
 			
-			ns.publish(e.stream);
+			//ns.publish(e.stream);
 			camerasPublishing[e.stream] = ns;
 		}
 		

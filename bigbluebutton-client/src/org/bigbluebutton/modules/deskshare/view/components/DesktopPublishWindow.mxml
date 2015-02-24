@@ -61,7 +61,9 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
       import org.bigbluebutton.main.views.MainCanvas;
       import org.bigbluebutton.modules.deskshare.events.AppletStartedEvent;
       import org.bigbluebutton.modules.deskshare.events.CursorEvent;
+      import org.bigbluebutton.modules.deskshare.events.ShareEvent;
       import org.bigbluebutton.modules.deskshare.events.ShareWindowEvent;
+      import org.bigbluebutton.modules.deskshare.events.StartedViewingEvent;
       import org.bigbluebutton.modules.deskshare.events.StopSharingButtonEvent;
       import org.bigbluebutton.modules.deskshare.events.StreamEvent;
       import org.bigbluebutton.modules.deskshare.events.ViewStreamEvent;
@@ -176,11 +178,31 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				var captureY:Number = 0;				
 				sharingFullScreen = fullScreen;
 				LogUtil.debug("Calling startApplet");
-				ExternalInterface.call("startApplet", uri, room, fullScreen, true /*useSVC2Check.selected*/);
+				//abort calling deskshare applet (desktop sharing will be handled by OBS)
+				//ExternalInterface.call("startApplet", uri, room, fullScreen, true /*useSVC2Check.selected*/);
+
+				if (ExternalInterface.available) {
+					//var conectou:Boolean = ExternalInterface.call("connectOBStray", "localhost", uri, room, dsOptions.defaultWidth, dsOptions.defaultHeight);
+					var conectou:Boolean = ExternalInterface.call("connectOBStray", "localhost", "143.54.12.61/deskShare", room);
+					//todo: verificar chamada ao callback do connect no javascript
+					// if (conectou)
+					//{
+						// ExternalInterface.call("setupDisplay",1);
+						// ExternalInterface.call("setupDisplaySize", 800, 450);
+						// ExternalInterface.call("startStreamingOBS");
+					//}
+				}
+
+				startPreviewStream(connection, room, 800, 450);
+				var streamEvent:StreamEvent = new StreamEvent(StreamEvent.START);
+				streamEvent.videoWidth = 800;
+				streamEvent.videoHeight = 450;
+				dispatchEvent(streamEvent);
 			}
 			
 			public function stopSharing():void{
 				if (streaming) {
+					ExternalInterface.call("stopOBS");
 					stopStream();
 					var streamEvent:StreamEvent = new StreamEvent(StreamEvent.STOP);
 					dispatchEvent(streamEvent);					
@@ -228,7 +250,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				dispatchEvent(streamEvent);
 			}
 			
-			private function startPreviewStream(nc:NetConnection, streamName:String, capWidth:Number, capHeight:Number):void{				
+			private function startPreviewStream(nc:NetConnection, streamName:String, capWidth:Number, capHeight:Number):void{ 
 				streaming = true;
 				
 				// Store capture dimensions so we can position cursor properly.
@@ -237,7 +259,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				
 				videoHolder = new UIComponent();
 				
-				var vidW:Number = captureWidth;
+				var vidW:Number = captureWidth;				
 				var vidH:Number = captureHeight;
 				
 				// Don't scale if capture dimension is smaller than window.
@@ -318,7 +340,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			}
 
 			private function closeWindow():void {			
-				ExternalInterface.call("stopApplet");	
+				ExternalInterface.call("stopApplet");
 				dispatchEvent(new ShareWindowEvent(ShareWindowEvent.CLOSE));				
 			}		
 				

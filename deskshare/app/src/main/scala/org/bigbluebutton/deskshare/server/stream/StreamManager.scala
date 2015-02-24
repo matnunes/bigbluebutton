@@ -36,8 +36,9 @@ case class StreamPublishingReply(publishing: Boolean, width: Int, height: Int)
 
 class StreamManager(record:Boolean, recordingService:RecordingService) extends Actor {
 	private val log = Logger.get
- 
+
 	var app: DeskshareApplication = null
+	var deskStream: DeskshareStream = null
  	
 	def setDeskshareApplication(a: DeskshareApplication) {
 	  app = a
@@ -61,7 +62,7 @@ class StreamManager(record:Boolean, recordingService:RecordingService) extends A
 	    	  streams -= ds.room
 	      	}
 	      case is: IsStreamPublishing => {
-	    	  log.debug("StreamManager: Received IsStreamPublishing message for %s", is.room)
+	    	  log.info("StreamManager: Received IsStreamPublishing message for %s", is.room)
 	    	  streams.get(is.room) match {
 	    	    case Some(str) =>  reply(new StreamPublishingReply(true, str.width, str.height))
 	    	    case None => reply(new StreamPublishingReply(false, 0, 0))
@@ -94,8 +95,19 @@ class StreamManager(record:Boolean, recordingService:RecordingService) extends A
 			case _ => log.error("StreamManager:Exception while creating stream for [ %s ]", room); return None
 	  }
 	}
+
+	def addObsStream(room: String, width: Int, height: Int) {
+		deskStream = new DeskshareStream(app, room, width, height, record, recordingService.getRecorderFor(room))
+		this ! new AddStream(room, deskStream)
+	}
  
+	def stopStream(room: String) {
+		app.stopIStream(room)
+	 	deskStream ! StopStream
+	}
+
   	def destroyStream(room: String) {
+  		deskStream ! StopStream
   		this ! new RemoveStream(room)
   	}  	
    
