@@ -4,8 +4,6 @@ if (!window.console.log) window.console.log = function () { };
 function startApplet(IP, roomNumber, fullScreen, useSVC2)
 {
         console.log("Starting deskshare applet.");
-        console.log("Is Java enabled? " + isJavaEnabled());
-        console.log("Is Java version appropriate for desktop sharing? " + isJavaVersionAppropriateForDeskshare());
         var div = document.createElement("div");
         div.id = "deskshare";
 
@@ -43,16 +41,6 @@ function stopApplet(){
         removeFrame();
 }
 
-var isJavaEnabled = function() {
-    return typeof(navigator.javaEnabled) !== 'undefined' && navigator.javaEnabled();
-}
-
-var isJavaVersionAppropriateForDeskshare = function() {
-    var required = '1.7.0_51+';
-    return deployJava.versionCheck(required);
-}
-
-function checkForJava(){
-//      if (navigator.javaEnabled() || window.navigator.javaEnabled())
-                return 1;
+function appletStartupCallback() {
+        BBB.javaAppletLaunched();
 }

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.*;
 import java.awt.Image;
+import netscape.javascript.*;
 
 public class DeskShareApplet extends JApplet implements ClientListener {
 	public static final String NAME = "DESKSHAREAPPLET: ";
@@ -53,8 +54,7 @@ public class DeskShareApplet extends JApplet implements ClientListener {
     
     public boolean isSharing = false;
     private volatile boolean clientStarted = false;
-    private final static String MIN_JRE_VERSION = "1.7.0_51";
-    private final static String VERSION_ERROR_MSG = "Desktop sharing requires Java 7 update 51 (or later) to run.";
+    private final static String VERSION_ERROR_MSG = "You have an unsupported Java version.";
     
     private class DestroyJob implements PrivilegedExceptionAction {
        public Object run() throws Exception {
@@ -95,8 +95,16 @@ public class DeskShareApplet extends JApplet implements ClientListener {
 			icon = ImageIO.read(url);
 		} catch (IOException e) {
 		}
+		
+		// Callback to JavaScript
+		try {
+			JSObject window = JSObject.getWindow(this);
+			window.call("appletStartupCallback", new Object[]{});
+		} catch (JSException jse) {
+			jse.printStackTrace();
+		}
 	}
-	 
+	
 	private String getJavaVersionRuntime() {
 		return System.getProperty("java.version");
 	}
@@ -128,14 +136,13 @@ public class DeskShareApplet extends JApplet implements ClientListener {
 	public void start() {		 	
 		System.out.println("Desktop Sharing Applet Starting");
 		super.start();
-
 		String javaRuntimeVersion = getJavaVersionRuntime();
 		System.out.println("**** JAVA VERSION = [" + javaRuntimeVersion + "]");
 		
 		if (VersionCheckUtil.validateMinJREVersion(javaRuntimeVersion, minJreVersion))
 			allowDesktopSharing();
 		else
-			displayJavaWarning(VERSION_ERROR_MSG);
+			displayJavaWarning("Unsupported Java version [" + javaRuntimeVersion + "]. Minimum version required [" + minJreVersion + "]");
 	}
 
 	
