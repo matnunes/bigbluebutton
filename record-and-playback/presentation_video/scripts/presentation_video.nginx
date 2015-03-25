@@ -16,7 +16,12 @@
 # with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 #
 
+        location ~* /presentation_video/(.*\.webm)$ {
+                root        /var/bigbluebutton/published;
+                add_header  Content-disposition "attachment;";
+        }
+
         location /presentation_video {
-                root    /var/bigbluebutton/published;
-                index  index.html index.htm;
+                root        /var/bigbluebutton/published;
+                index       index.html index.htm;
         }
