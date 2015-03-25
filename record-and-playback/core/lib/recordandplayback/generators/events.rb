@@ -224,6 +224,22 @@ module BigBlueButton
       stop_events.sort {|a, b| a[:stop_timestamp] <=> b[:stop_timestamp]}
     end
 
+    def self.get_matched_start_stop_deskshare_events(events_xml)
+      BigBlueButton.logger.info("Task: Getting and matching start and stop DESKSHARE events")
+      start_events = BigBlueButton::Events.get_start_deskshare_events(events_xml)
+      stop_events = BigBlueButton::Events.get_stop_deskshare_events(events_xml)
+      matched_events = []
+      start_events.each do |start_event|
+        stop_events.each do |stop_event|
+          if (stop_event[:stream] == start_event[:stream])
+            s = {:start_timestamp => start_event[:start_timestamp], :stop_timestamp => stop_event[:stop_timestamp], :stream => start_event[:stream]}
+            matched_events << s
+          end
+        end
+      end
+      return matched_events
+    end
+
     def self.create_deskshare_edl(archive_dir)
       events = Nokogiri::XML(File.open("#{archive_dir}/events.xml"))
 

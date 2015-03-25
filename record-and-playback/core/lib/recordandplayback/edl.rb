@@ -22,8 +22,8 @@ require File.expand_path('../edl/audio', __FILE__)
 
 module BigBlueButton
   module EDL
-    FFMPEG = ['ffmpeg', '-y', '-v', 'warning', '-nostats']
-    FFPROBE = ['ffprobe', '-v', 'warning', '-print_format', 'json', '-show_format', '-show_streams', '-count_frames']
+    FFMPEG = ['/usr/local/bin/ffmpeg', '-y', '-v', 'warning', '-nostats']
+    FFPROBE = ['/usr/local/bin/ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', '-count_frames']
 
     def self.encode(audio, video, format, output_basename, audio_offset = 0)
       output = "#{output_basename}.#{format[:extension]}"
@@ -32,13 +32,19 @@ module BigBlueButton
         BigBlueButton.logger.info "Performing video encode pass #{i}"
         lastoutput = "#{output_basename}.encode.#{format[:extension]}"
         ffmpeg_cmd = FFMPEG
-        ffmpeg_cmd += ['-i', video] if video
+        map_options = []
+        if video
+          ffmpeg_cmd += ['-i', video]
+          map_options += ['-map', "#{ffmpeg_cmd.count('-i') - 1}:v:0"]
+        end
         if audio
           if audio_offset != 0
             ffmpeg_cmd += ['-itsoffset', ms_to_s(audio_offset)]
           end
           ffmpeg_cmd += ['-i', audio]
+          map_options += ['-map', "#{ffmpeg_cmd.count('-i') - 1}:a:0"]
         end
+        ffmpeg_cmd += map_options
         ffmpeg_cmd += [*pass, lastoutput]
         Dir.chdir(File.dirname(output)) do
           exitstatus = BigBlueButton.exec_ret(*ffmpeg_cmd)

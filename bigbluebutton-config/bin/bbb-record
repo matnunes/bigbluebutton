@@ -50,7 +50,9 @@ RAW_VIDEO_SRC=$(cat /usr/local/bigbluebutton/core/scripts/bigbluebutton.yml | se
 RAW_DESKSHARE_SRC=$(cat /usr/local/bigbluebutton/core/scripts/bigbluebutton.yml | sed -n '/\(raw_deskshare_src\)/{s/.*raw_deskshare_src:[ ]*//;s/;//;p}')
 RAW_PRESENTATION_SRC=$(cat /usr/local/bigbluebutton/core/scripts/bigbluebutton.yml | sed -n '/\(raw_presentation_src\)/{s/.*raw_presentation_src:[ ]*//;s/;//;p}')
 
-TYPES=$(cd /usr/local/bigbluebutton/core/scripts/process; ls *.rb | sed s/.rb//g)
+# This parser doesn't break if there's no workflow enabled
+TYPES=$(cd /usr/local/bigbluebutton/core/scripts/process; ls | grep '\.rb$' | sed s/\.rb.*//g)
+TYPES="$TYPES presentation_recorder"
 
 mark_for_rebuild() {
 	MEETING_ID=$1
@@ -60,18 +62,20 @@ mark_for_rebuild() {
 		exit 1
 	fi
 
-	# Remove the existing 'published' recording files
-	rm -rvf /var/bigbluebutton/published/$type/$MEETING_ID
-	rm -rvf /var/bigbluebutton/unpublished/$type/$MEETING_ID
-
-	# Clear out all the done files
 	rm -vf $STATUS/sanity/$MEETING_ID.done
 	for type in $TYPES; do
+		# Remove the existing 'published' recording files
+		rm -rvf /var/bigbluebutton/published/$type/$MEETING_ID
+		rm -rvf /var/bigbluebutton/unpublished/$type/$MEETING_ID
+
+		# Clear out all the done files
 		rm -vf $STATUS/published/$MEETING_ID-$type.fail
 		rm -vf $STATUS/published/$MEETING_ID-$type.done
 		rm -vf $STATUS/processed/$MEETING_ID-$type.fail
 		rm -vf $STATUS/processed/$MEETING_ID-$type.done
 	done
+
+	rm -rvf /var/bigbluebutton/recording/process/presentation_recorder/$MEETING_ID
 
 	# Restart processing at the 'archived' step
 	touch $STATUS/archived/$MEETING_ID.done
@@ -308,9 +312,11 @@ fi
 
 if [ $REBUILDALL ]; then
 	echo "Rebuilding all recordings"
+	sudo service mconf-presentation-recorder stop
 	for recording in $(dir $BASE/raw); do
 		mark_for_rebuild $recording
 	done
+	sudo service mconf-presentation-recorder start
 fi 
 
 if [ $REPUBLISH ]; then
@@ -332,7 +338,7 @@ if [ $CLEAN ]; then
 	sudo /etc/init.d/bbb-record-core stop
 	for type in $TYPES; do
 		echo " clearning logs in /var/log/bigbluebutton/$type"
-		find /var/log/bigbluebutton/$type -name "*.log" -exec sudo rm '{}' \;
+		find /var/log/bigbluebutton/$type -name "*.log*" -exec sudo rm '{}' \;
 	done
 	sudo /etc/init.d/bbb-record-core start
 fi
@@ -351,6 +357,9 @@ if [ $DELETE ]; then
   rm -f /var/bigbluebutton/recording/status/sanity/$MEETING_ID*
   rm -f /var/bigbluebutton/recording/status/processed/$MEETING_ID*
   rm -f /var/bigbluebutton/recording/status/published/$MEETING_ID*
+
+  # Remove API call of presentation_video
+  rm -f /var/bigbluebutton/recording/status/presentation_video/$MEETING_ID*
   
   # Remove all of the related files
   for type in $TYPES; do
@@ -379,6 +388,9 @@ if [ $DELETEALL ]; then
   rm -f /var/bigbluebutton/recording/status/sanity/*
   rm -f /var/bigbluebutton/recording/status/processed/*
   rm -f /var/bigbluebutton/recording/status/published/*
+
+  # Remove API call of presentation_video
+  rm -f /var/bigbluebutton/recording/status/presentation_video/*
 
   for type in $TYPES; do
     rm -rf /var/bigbluebutton/published/$type/*

@@ -76,6 +76,113 @@ class ApiController {
       }
     }
   }
+
+  def testFunc = {
+    String API_CALL = 'testFunc'
+    log.debug CONTROLLER_NAME + "#${API_CALL}"
+    log.debug params
+
+    withFormat {  
+      xml {
+        render(contentType:"text/xml") {
+          response() {
+            returncode(RESP_CODE_SUCCESS)
+          }
+        }
+      }
+    }
+  }
+
+  /*********************************** 
+   * GENERATE_PRESENTATION_VIDEO (API) 
+   ***********************************/
+  def generatePresentationVideo = {
+    String API_CALL = 'generatePresentationVideo'
+    log.debug CONTROLLER_NAME + "#${API_CALL}"
+    log.debug params
+    
+    // BEGIN - backward compatibility
+    if (StringUtils.isEmpty(params.checksum)) {
+      invalid("checksumError", "You did not pass the checksum security check")
+      return
+    }
+
+    if (StringUtils.isEmpty(params.meetingID)) {
+      invalid("missingParamMeetingID", "You must specify a meeting ID for the meeting.");
+      return
+    }
+    
+    if (! paramsProcessorUtil.isChecksumSame(API_CALL, params.checksum, request.getQueryString())) {
+      invalid("checksumError", "You did not pass the checksum security check")
+      return
+    }
+    // END - backward compatibility
+    
+    ApiErrors errors = new ApiErrors();
+    paramsProcessorUtil.processRequiredCreateParams(params, errors);
+
+    if (errors.hasErrors()) {
+      respondWithErrors(errors)
+      return
+    }
+            
+    // Do we agree with the checksum? If not, complain.
+    if (! paramsProcessorUtil.isChecksumSame(API_CALL, params.checksum, request.getQueryString())) {
+      errors.checksumError()
+      respondWithErrors(errors)
+      return
+    }
+
+    Meeting newMeeting = paramsProcessorUtil.processCreateParams(params);      
+
+    if (!meetingService.existMetadata(newMeeting)) {
+      log.debug "No published nor unpublished metadata found for the conference."
+      withFormat {  
+          xml {
+            render(contentType:"text/xml") {
+              response() {
+                returncode(RESP_CODE_FAILED)
+                meetingId(newMeeting.getExternalId())
+                messageKey("noMetadata")
+                message("Required metadata not found for the conference.")
+              }
+            }
+          }
+        }
+    } else if (meetingService.existPresentationVideo(newMeeting)) {
+      log.debug "Conference " + newMeeting.getExternalId() + " already processed or started for presentation video"
+      withFormat {  
+          xml {
+            render(contentType:"text/xml") {
+              response() {
+                returncode(RESP_CODE_SUCCESS)
+                meetingId(newMeeting.getExternalId())
+                messageKey("duplicateWarning")
+                message("This conference was already in existence and may currently be in progress.")
+              }
+            }
+          }
+        }
+
+    } else {
+      log.debug "Conference " + newMeeting.getExternalId() + " will start for presentation video ";
+
+      meetingService.generatePresentationVideo(newMeeting);      
+
+      withFormat {  
+          xml {
+            render(contentType:"text/xml") {
+              response() {
+                returncode(RESP_CODE_SUCCESS)
+                meetingId(newMeeting.getExternalId())
+                messageKey("presentationVideoStarted")
+                message("Presentation Video started")
+              }
+            }
+          }
+        }
+    }
+  }
  
         
   /*********************************** 

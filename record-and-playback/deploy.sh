@@ -45,6 +45,9 @@ if $RECORDING_SERVER ; then
 	deploy_format "mconf_decrypter"
 	sudo mv /usr/local/bigbluebutton/core/scripts/mconf-recording-decrypter.initd /etc/init.d/mconf-recording-decrypter
 	sudo mv /usr/local/bigbluebutton/core/scripts/mconf-recording-decrypter.monit /etc/monit/conf.d/mconf-recording-decrypter
+	deploy_format "presentation_video"
+	sudo mv /usr/local/bigbluebutton/core/scripts/mconf-presentation-recorder.monit /etc/monit/conf.d/mconf-presentation-recorder
+	sudo mv /usr/local/bigbluebutton/core/scripts/mconf-presentation-recorder.initd /etc/init.d/mconf-presentation-recorder
 else
 	deploy_format "mconf_encrypted"
 fi
@@ -56,6 +59,7 @@ sudo mkdir -p /var/bigbluebutton/recording/publish/
 sudo mkdir -p /var/bigbluebutton/recording/status/recorded/
 sudo mkdir -p /var/bigbluebutton/recording/status/archived/
 sudo mkdir -p /var/bigbluebutton/recording/status/processed/
+sudo mkdir -p /var/bigbluebutton/recording/status/presentation_video/
 sudo mkdir -p /var/bigbluebutton/recording/status/sanity/
 
 sudo chown -R tomcat7:tomcat7 /var/bigbluebutton/ /var/log/bigbluebutton/

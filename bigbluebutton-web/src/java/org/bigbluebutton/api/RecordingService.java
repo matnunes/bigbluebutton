@@ -20,6 +20,7 @@
 package org.bigbluebutton.api;
 
 import java.io.File;
+import org.apache.commons.io.FileUtils;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class RecordingService {
 	
 	private String publishedDir = "/var/bigbluebutton/published";
 	private String unpublishedDir = "/var/bigbluebutton/unpublished";
+	private String presentationVideoStatusDir = "/var/bigbluebutton/recording/status/presentation_video";
 	private RecordingServiceHelper recordingServiceHelper;
 	private String recordStatusDir;
 	
@@ -55,6 +57,53 @@ public class RecordingService {
 		}
 	}
 	
+	public void startPresentationVideo(String meetingId) {		
+		String done = presentationVideoStatusDir + "/" + meetingId + ".done";
+
+		File doneFile = new File(done);
+		if (!doneFile.exists()) {
+			try {
+				doneFile.createNewFile();
+				if (!doneFile.exists()) {
+					log.error("Failed to create " + done + " file.");
+				}
+				log.debug("File " + done + " created!");
+			} catch (IOException e) {
+				log.error("Failed to create " + done + " file.");
+			}
+		} else {
+			log.error(done + " file already exists.");
+		}		
+	}
+
+	public boolean existPresentationVideo(String meetingId) {
+		String done = presentationVideoStatusDir + "/" + meetingId + ".done";
+
+		File doneFile = new File(done);
+		if (doneFile.exists())
+			return true;
+		else
+			return false;
+	}
+
+	public boolean existMetadata(String meetingId) {
+		String publishedMetadata = publishedDir + "/presentation/" + meetingId + "/metadata.xml";
+		String unpublishedMetadata = unpublishedDir + "/presentation/" + meetingId + "/metadata.xml";		
+
+		File xmlPublished = new File(publishedMetadata);
+		File xmlUnpublished = new File(unpublishedMetadata);
+		if (xmlPublished.exists()) {
+			log.debug("Metadata exist at " + publishedMetadata);
+			return true;
+		} else if (xmlUnpublished.exists()) {
+			log.debug("Metadata exist at " + unpublishedMetadata);
+			return true;
+		} else {
+			log.debug("Metadata does not exist at " + publishedMetadata + " nor " + unpublishedMetadata);
+			return false;
+		}
+	}
+
 	public ArrayList<Recording> getRecordings(ArrayList<String> meetingIds) {
 		ArrayList<Recording> recs = new ArrayList<Recording>();
 		

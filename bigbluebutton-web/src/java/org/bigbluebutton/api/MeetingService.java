@@ -322,6 +322,19 @@ public class MeetingService implements MessageListener {
 		return messagingService.listSubscriptions(meetingId);
 	}
 
+	public void generatePresentationVideo(Meeting m) {
+		log.debug("Generating presentation video for meeting with external id: " + m.getExternalId());
+		recordingService.startPresentationVideo(m.getExternalId());
+	}
+
+	public boolean existPresentationVideo(Meeting m) {
+		return recordingService.existPresentationVideo(m.getExternalId());
+	}
+
+	public boolean existMetadata(Meeting m) {
+		return recordingService.existMetadata(m.getExternalId());
+	}
+
 	public Meeting getMeeting(String meetingId) {
 		if (meetingId == null)
 			return null;
