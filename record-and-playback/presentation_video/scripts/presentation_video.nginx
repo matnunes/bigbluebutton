@@ -17,8 +17,12 @@
 #
 
         location ~* /presentation_video/(.*\.webm)$ {
+                set $name "video.webm";
+                if ($args ~ "name=([^&]+)") {
+                        set $name "$1.webm";
+                }
                 root        /var/bigbluebutton/published;
-                add_header  Content-disposition "attachment;";
+                add_header  Content-disposition "attachment;filename='$name'";
         }
 
         location /presentation_video {
