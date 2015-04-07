@@ -6,6 +6,7 @@ var currentMessageCounter = 1;
 var requestCallbacks = {};
 var bcastUrl = "";
 var bcastPath = "";
+var waitCount = 0;
 
 ///funcoes para uso do OBS
 
@@ -17,7 +18,6 @@ function connectOBStray(host, url, path) {
         
         var url = "ws://" + connectingHost + ":2424";
 
-        
         if (typeof MozWebSocket != "undefined") 
         {
                 socket_obsapi = new MozWebSocket(url, "obstraycontrol");
@@ -26,7 +26,7 @@ function connectOBStray(host, url, path) {
         {
                 socket_obsapi = new WebSocket(url+"/obstraycontrol/");
         }
-        
+
         try {
                 socket_obsapi.onopen = _onWebSocketConnected;
                 socket_obsapi.onmessage = _onWebSocketReceiveMessage;
@@ -35,7 +35,13 @@ function connectOBStray(host, url, path) {
         } catch(exception) {
                 alert('<p>Error' + exception);  
         }
-        return true;
+
+        return websocketConnected;
+}
+
+function isConnected() {
+        if (socket_obsapi.readyState == 1)
+                return true;
 }
 
 function setupDisplay(displayId) {
@@ -117,6 +123,8 @@ function _onWebSocketConnected()
         
         /* call the generic onWebSocketConnected function */
         //onWebSocketConnected();
+        if (bcastUrl == "")
+                return websocketConnected;
         setupStreamUrl(bcastUrl);
         setupStreamPath(bcastPath);
         setupDisplay(1);
@@ -149,6 +157,7 @@ function _onWebSocketError(err)
 {
         console.log("websocket error");
         socket_obsapi.close();
+        return false;
 }
 
 function gracefulWebsocketClose()

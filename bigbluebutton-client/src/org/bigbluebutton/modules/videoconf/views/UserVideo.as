@@ -34,6 +34,7 @@ package org.bigbluebutton.modules.videoconf.views
     protected var _video:VideoWithWarnings = null;
     protected var _videoProfile:VideoProfile;
     protected var _dispatcher:Dispatcher = new Dispatcher();
+    protected var isDeskcapture:Boolean = false;
 
     public function UserVideo() {
       super();
@@ -53,9 +54,11 @@ package org.bigbluebutton.modules.videoconf.views
       startPublishing();
     }
 
-    public function startPublishObs(videoProfile:VideoProfile):void {
-      _camIndex = 1001;
+    public function startPublishObs(camIndex:int, videoProfile:VideoProfile):void {
+      _camIndex = camIndex;      
+      isDeskcapture = true;
       _videoProfile = videoProfile;
+
       setOriginalDimensions(_videoProfile.width, _videoProfile.height);
       
       invalidateDisplayList();
@@ -97,13 +100,14 @@ package org.bigbluebutton.modules.videoconf.views
 
       var e:StartBroadcastEvent = new StartBroadcastEvent();
       e.stream = _streamName;
-      if (_camIndex != 1001) //desktop capture
+      if (isDeskcapture == true) //desktop capture
         {
-          e.camera = _video.getCamera();
+          e.isDeskcapture = true;
+          user.addViewingStream(_streamName);
         }
       else
         {
-          e.isDeskcapture = true;
+          e.camera = _video.getCamera();
         }
 
         LogUtil.debug("************************ StartBroadcastEvent: "+e.stream);
@@ -132,6 +136,7 @@ package org.bigbluebutton.modules.videoconf.views
     }
 
     private function stopViewing():void {
+                    LogUtil.debug("************************ stopViewing [streamName]: "+_streamName);
       var stopEvent:StoppedViewingWebcamEvent = new StoppedViewingWebcamEvent();
       stopEvent.webcamUserID = user.userID;
       stopEvent.streamName = _streamName;

@@ -103,12 +103,13 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
                 setUserProperties();
             }
 
-            public function publishObs(options:VideoConfOptions, videoProfile:VideoProfile):void {
+            public function publishObs(options:VideoConfOptions, camIndex:int, videoProfile:VideoProfile):void {
                 video.user = _user;
                 video.options = options;
-                video.startPublishObs(videoProfile);
+                video.startPublishObs(camIndex, videoProfile);
                 //connection:NetConnection?
                 //video.view
+                videoVisibility = true;
                 setUserProperties();
             }
 

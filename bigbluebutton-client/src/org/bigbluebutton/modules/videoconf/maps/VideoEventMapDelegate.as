@@ -327,7 +327,10 @@ package org.bigbluebutton.modules.videoconf.maps
       proxy.stopAllBroadcasting();
 
       var userID:String = UsersUtil.getMyUserID();
-      _graphics.removeGraphicsFor(userID);
+      //var deskcaptureStream:String = _graphics.getStreamByCamIndex(userID, Camera.names.length);
+
+      //if (deskcaptureStream != "")
+      //  stopBroadcasting(deskcaptureStream);
 
       var broadcastEvent:BroadcastStoppedEvent = new BroadcastStoppedEvent();
       broadcastEvent.stream = "";
@@ -363,6 +366,7 @@ package org.bigbluebutton.modules.videoconf.maps
       _dispatcher.dispatchEvent(broadcastEvent);
 
       var camId:int = closePublishWindowWithStream(UsersUtil.getMyUserID(), stream);
+      LogUtil.debug("--------> stopBroadcasting CAM-ID: "+camId);
 
       if (proxy.videoOptions.showButton) {
         //Make toolbar button enabled again
@@ -401,7 +405,14 @@ package org.bigbluebutton.modules.videoconf.maps
       var userID:String = UsersUtil.getMyUserID();
       var camIndex:int = event.camId;
 
-      _graphics.removeVideoByCamIndex(userID, camIndex);
+      if (camIndex == Camera.names.length) //deskcapture 'camera' index is always [(number-of-real-webcams)+1]
+      {
+        stopBroadcasting(_graphics.getStreamByCamIndex(userID, camIndex));
+      }
+      else
+      {
+        _graphics.removeVideoByCamIndex(userID, camIndex);
+      }
     }
 
 	public function handleCamSettingsClosedEvent(event:BBBEvent):void{

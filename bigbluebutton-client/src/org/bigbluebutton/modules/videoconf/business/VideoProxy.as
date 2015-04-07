@@ -121,6 +121,7 @@ package org.bigbluebutton.modules.videoconf.business
 			{
 				deskcaptureStream = e.stream;
 				ExternalInterface.call("connectOBStray", "localhost", _url, deskcaptureStream);
+				LogUtil.debug("======> StartPublishing VideoProxy");
 				ns.play(deskcaptureStream);
 			}
 			else
@@ -189,6 +190,11 @@ package org.bigbluebutton.modules.videoconf.business
 		}
 
 		public function stopAllBroadcasting():void {
+			if (deskcaptureStream != null)
+      		{
+				ExternalInterface.call("stopOBS");
+				deskcaptureStream = null;
+      		}
 			for each (var ns:NetStream in camerasPublishing)
 			{
 				ns.attachCamera(null);
@@ -196,11 +202,6 @@ package org.bigbluebutton.modules.videoconf.business
 				ns = null;
 			}
 			camerasPublishing = new Object();
-			if (deskcaptureStream != null)
-      		{
-				ExternalInterface.call("stopOBS");
-				deskcaptureStream = null;
-      		}
 		}
 
 		public function disconnect():void {

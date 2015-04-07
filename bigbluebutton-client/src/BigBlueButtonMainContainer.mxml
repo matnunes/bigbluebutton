@@ -74,6 +74,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
         BBB.initConfigManager();
         BBB.initVideoProfileManager();
         globalModifier = ExternalInterface.call("determineGlobalModifier");
+        ExternalInterface.call("connectOBStray", "localhost", "", "");
       }
       
       private function configLoadedEventHandler(e:Event):void {

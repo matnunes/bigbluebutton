@@ -183,7 +183,8 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 
 				if (ExternalInterface.available) {
 					//var conectou:Boolean = ExternalInterface.call("connectOBStray", "localhost", uri, room, dsOptions.defaultWidth, dsOptions.defaultHeight);
-					var conectou:Boolean = ExternalInterface.call("connectOBStray", "localhost", "143.54.12.61/deskShare", room);
+					//var conectou:Boolean = ExternalInterface.call("connectOBStray", "localhost", "143.54.12.61/deskShare", room);
+					var conectou:Boolean = ExternalInterface.call("connectOBStray", "localhost", uri, room);
 					//todo: verificar chamada ao callback do connect no javascript
 					// if (conectou)
 					//{

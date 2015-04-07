@@ -78,15 +78,10 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
       
 		private function onCreationComplete():void {
             tabIndex = 51;
-
-            var myObj:Object = {}
-						myObj.label = "Deskcapture";
-						myObj.index = Camera.names.length+1;
-						camerasAvailable.addItem(myObj);
             
 			if(defaultCamera != null) {
 				var indexDefault:int = 0;
-				for (var i:int = 0; i < Camera.names.length; i++){
+				for (var i:int = 0; i < camerasArray.length; i++){
 					if(camerasArray[i].status == OFF_STATE) {
 						var myObj:Object = {}
 						myObj.label = camerasArray[i].label;
@@ -101,6 +96,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			} else {
 				cmbCameraSelector.selectedIndex = 0;
 			}
+
 			
 			var idx:int = 0;
 			var defaultProfile:VideoProfile = BBB.defaultVideoProfile;
@@ -119,7 +115,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				showResControls(true);
 			}
 			
-			if (Camera.names.length > 1) {
+			if (camerasArray.length > 1) {
 				showVideoControls(true);
 			}
 			
@@ -149,7 +145,10 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			setAspectRatio(selectedVideoProfile.width,selectedVideoProfile.height);
 			
 			if (camerasAvailable.getItemAt(cmbCameraSelector.selectedIndex).label == "Deskcapture") //case of desktop capturing
+			{
 				btnStartPublish.enabled = true;
+				selectedCamName = "Deskcapture";
+			}
 
 			_video.successCallback = function():void {
 				btnStartPublish.enabled = true;
@@ -175,7 +174,10 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			
 			var globalDispatcher:Dispatcher = new Dispatcher();
 			var camEvent:BBBEvent = new BBBEvent(BBBEvent.CAMERA_SETTING);
-			camEvent.payload.cameraIndex = selectedCam;
+//			if (selectedCamName == "Deskcapture")
+//				camEvent.payload.cameraIndex = 1001;
+//			else
+				camEvent.payload.cameraIndex = selectedCam;
 			camEvent.payload.cameraName = selectedCamName;
 			camEvent.payload.videoProfile = selectedVideoProfile;
 			camEvent.payload.publishInClient = publishInClient;
