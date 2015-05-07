@@ -182,7 +182,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 					trace("[ToolbarPopupButton:openPublishWindow] Close window");
 					switchStateToNormal();
 					var stopShareCameraRequestEvent:StopShareCameraRequestEvent = new StopShareCameraRequestEvent(StopShareCameraRequestEvent.STOP_SHARE_ALL_CAMERA_REQUEST);
-					LogUtil.debug("=========(STOP ALL CAMERAS)");
+					LogUtil.debug("=========(STOP ALL CAMERAS obs)");
 					dispatchEvent(stopShareCameraRequestEvent);
 					this.enabled = true;		
 				} else {
