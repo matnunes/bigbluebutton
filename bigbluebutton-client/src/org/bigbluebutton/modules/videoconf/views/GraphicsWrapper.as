@@ -259,14 +259,28 @@ package org.bigbluebutton.modules.videoconf.views
             super.addChild(graphic);
         }
 
-        private function hasVideo(userId:String, streamName:String):Boolean {
-            for (var i:int = 0; i < numChildren; ++i) {
-                var item:UserGraphicHolder = getChildAt(i) as UserGraphicHolder;
-                if (item.user && item.user.userID == userId && item.visibleComponent is UserVideo && item.video.streamName == streamName) {
-                    return true;
-                }
-            }
-            return false;
+		private function hasVideo(userId:String, streamName:String):Boolean {
+				    for (var i:int = 0; i < numChildren; ++i) {
+				        var item:UserGraphicHolder = getChildAt(i) as UserGraphicHolder;
+				        if (item.user && item.user.userID == userId && item.visibleComponent is UserVideo && item.video.streamName == streamName) {
+				            return true;
+				        }
+				    }
+				    return false;
+				}
+
+        private function addVideoForHelper(userId:String, connection:NetConnection, streamName:String):void {
+            trace("[GraphicsWrapper:addVideoForHelper] streamName " + streamName);
+            var graphic:UserGraphicHolder = new UserGraphicHolder();
+            graphic.userId = userId;
+            graphic.addEventListener(FlexEvent.CREATION_COMPLETE, function(event:FlexEvent):void {
+                graphic.loadVideo(_options, connection, streamName);
+                onChildAdd(event);
+            });
+            graphic.addEventListener(MouseEvent.CLICK, onVBoxClick);
+            graphic.addEventListener(FlexEvent.REMOVE, onChildRemove);
+
+            super.addChild(graphic);
         }
 
         public function addVideoFor(userId:String, connection:NetConnection, streamName:String):void {
@@ -285,11 +299,17 @@ package org.bigbluebutton.modules.videoconf.views
             super.addChild(graphic);
         }
 
-        private function addCameraForHelper(userId:String, camIndex:int, videoProfile:VideoProfile, chromePermissionDenied:Boolean):void {
+        private function addCameraForHelper(userId:String, camIndex:int, videoProfile:VideoProfile):void {
             var graphic:UserGraphicHolder = new UserGraphicHolder();
             graphic.userId = userId;
             graphic.addEventListener(FlexEvent.CREATION_COMPLETE, function(event:FlexEvent):void {
+			//check if its deskshare stream by profile thru the id
+                if (videoProfile.id.indexOf("obs") >= 0) {
+                    LogUtil.debug("------------publishing OBS");
+                    graphic.publishObs(_options, camIndex, videoProfile);
+                } else {
                 graphic.loadCamera(_options, camIndex, videoProfile, chromePermissionDenied);
+				}
                 onChildAdd(event);
             });
             graphic.addEventListener(MouseEvent.CLICK, onVBoxClick);
@@ -367,6 +387,7 @@ package org.bigbluebutton.modules.videoconf.views
 
         public function removeVideoByCamIndex(userId:String, camIndex:int):String {
             trace("[GraphicsWrapper:removeVideoByCamIndex] userId " + userId + " camIndex " + camIndex);
+            LogUtil.debug("[GraphicsWrapper:removeVideoByCamIndex] userId: " + userId + " camIndex: " + camIndex + "numChildren: "+numChildren);
             var streamName:String = "";
 
             for (var i:int = 0; i < numChildren; ++i) {
@@ -374,6 +395,19 @@ package org.bigbluebutton.modules.videoconf.views
                 if (item.user && item.user.userID == userId && item.visibleComponent is UserVideo && item.video.camIndex == camIndex) {
                     streamName = item.video.streamName;
                     removeChildHelper(item);
+                    break;
+                }
+            }
+            LogUtil.debug("[GraphicsWrapper:removeVideoByCamIndex] streamName: " + streamName);
+            return streamName;
+        }
+
+        public function getStreamByCamIndex(userId:String, camIndex:int):String {
+            var streamName:String = "";
+            for (var i:int = 0; i < numChildren; ++i) {
+                var item:UserGraphicHolder = getChildAt(i) as UserGraphicHolder;
+                if (item.user && item.user.userID == userId && item.visibleComponent is UserVideo && item.video.camIndex == camIndex) {
+                    streamName = item.video.streamName;
                     break;
                 }
             }
@@ -396,6 +430,7 @@ package org.bigbluebutton.modules.videoconf.views
 
         public function removeGraphicsFor(userId:String):void {
             trace("[GraphicsWrapper:removeGraphicsFor] userId " + userId);
+            LogUtil.debug("[GraphicsWrapper:removeGraphicsFor] userId " + userId);
             for (var i:int = 0; i < numChildren; ++i) {
                 var item:UserGraphicHolder = getChildAt(i) as UserGraphicHolder;
                 if (item.user && item.user.userID == userId) {

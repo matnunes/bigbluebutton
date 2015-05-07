@@ -12,6 +12,7 @@ package org.bigbluebutton.modules.videoconf.views
   import flash.net.NetConnection;
   import flash.net.NetStream;
   import mx.utils.ObjectUtil;
+  import org.bigbluebutton.common.LogUtil;
 
   import org.bigbluebutton.core.BBB;
   import org.bigbluebutton.core.model.VideoProfile;
@@ -34,6 +35,7 @@ package org.bigbluebutton.modules.videoconf.views
     protected var _video:VideoWithWarnings = null;
     protected var _videoProfile:VideoProfile;
     protected var _dispatcher:Dispatcher = new Dispatcher();
+    protected var isDeskcapture:Boolean = false;
 
     public function UserVideo() {
       super();
@@ -54,6 +56,17 @@ package org.bigbluebutton.modules.videoconf.views
       startPublishing();
     }
 
+    public function startPublishObs(camIndex:int, videoProfile:VideoProfile):void {
+      _camIndex = camIndex;      
+      isDeskcapture = true;
+      _videoProfile = videoProfile;
+
+      setOriginalDimensions(_videoProfile.width, _videoProfile.height);
+      
+      invalidateDisplayList();
+      startPublishing();
+    }
+
     private function newStreamName():String {
       /**
        * Add timestamp to create a unique stream name. This way we can record   
@@ -67,7 +80,7 @@ package org.bigbluebutton.modules.videoconf.views
 
     protected function getVideoProfile(stream:String):VideoProfile {
       trace("Parsing stream name [" + stream + "]");
-      var pattern:RegExp = new RegExp("([A-Za-z0-9]+)-([A-Za-z0-9]+)-\\d+", "");
+      var pattern:RegExp = new RegExp("(\\w+)-(\\w+)-\\d+", "");
       if (pattern.test(stream)) {
         trace("The stream name is well formatted");
         trace("Video profile resolution is [" + pattern.exec(stream)[1] + "]");
@@ -89,7 +102,18 @@ package org.bigbluebutton.modules.videoconf.views
 
       var e:StartBroadcastEvent = new StartBroadcastEvent();
       e.stream = _streamName;
-      e.camera = _video.getCamera();
+      if (isDeskcapture == true) //desktop capture
+        {
+          e.isDeskcapture = true;
+          user.addViewingStream(_streamName);
+        }
+      else
+        {
+          e.camera = _video.getCamera();
+        }
+
+        LogUtil.debug("************************ StartBroadcastEvent: "+e.stream);
+
       e.videoProfile = _videoProfile;
       _dispatcher.dispatchEvent(e);
     }
@@ -114,6 +138,7 @@ package org.bigbluebutton.modules.videoconf.views
     }
 
     private function stopViewing():void {
+                    LogUtil.debug("************************ stopViewing [streamName]: "+_streamName);
       var stopEvent:StoppedViewingWebcamEvent = new StoppedViewingWebcamEvent();
       stopEvent.webcamUserID = user.userID;
       stopEvent.streamName = _streamName;
@@ -125,6 +150,7 @@ package org.bigbluebutton.modules.videoconf.views
       var e:StopBroadcastEvent = new StopBroadcastEvent();
       e.stream = _streamName;
       e.camId = _camIndex;
+              LogUtil.debug("************************ stopPublishing: "+_camIndex);
       _dispatcher.dispatchEvent(e);
     }
 
@@ -141,7 +167,7 @@ package org.bigbluebutton.modules.videoconf.views
       _ns.receiveAudio(false);
       
       _videoProfile = getVideoProfile(streamName);
-      trace("Remote video profile: " + _videoProfile.toString());
+      LogUtil.debug("Remote video profile: " + _videoProfile.toString());
       if (_videoProfile == null) {
         throw("Invalid video profile");
         return;

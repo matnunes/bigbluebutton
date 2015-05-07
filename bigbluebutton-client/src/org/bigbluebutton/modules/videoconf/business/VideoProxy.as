@@ -33,11 +33,14 @@ package org.bigbluebutton.modules.videoconf.business
 	import flash.utils.Dictionary;
 
 	import mx.collections.ArrayCollection;
-	
+  	import flash.external.ExternalInterface;
+
 	import org.bigbluebutton.common.LogUtil;
 	import org.bigbluebutton.core.BBB;
 	import org.bigbluebutton.core.UsersUtil;
 	import org.bigbluebutton.core.managers.UserManager;
+	import org.bigbluebutton.main.model.users.BBBUser;
+	import org.bigbluebutton.main.model.users.events.StreamStartedEvent;
 	import org.bigbluebutton.modules.videoconf.events.ConnectedEvent;
 	import org.bigbluebutton.modules.videoconf.events.StartBroadcastEvent;
 	import org.bigbluebutton.modules.videoconf.model.VideoConfOptions;
@@ -58,6 +61,7 @@ package org.bigbluebutton.modules.videoconf.business
 		private var _url:String;
 		private var camerasPublishing:Object = new Object();
 		private var connected:Boolean = false;
+		private var deskcaptureStream:String = null;
 
 		// Message sender to request stream path
 		private var msgSender:MessageSender;
@@ -113,7 +117,7 @@ package org.bigbluebutton.modules.videoconf.business
       var dispatcher:Dispatcher = new Dispatcher();
       dispatcher.dispatchEvent(new ConnectedEvent(ConnectedEvent.VIDEO_CONNECTED));
     }
-
+    
 		private function onNetStatus(event:NetStatusEvent):void{
 			switch(event.info.code){
 				case "NetConnection.Connect.Success":
@@ -127,8 +131,12 @@ package org.bigbluebutton.modules.videoconf.business
 					break;
 			}
 		}
-
+		
 		private function onSecurityError(event:NetStatusEvent):void{
+		}
+		//deprecated - to be removed
+		public function get connection():NetConnection{
+			return this.nc;
 		}
 		
 		public function get publishConnection():NetConnection{
@@ -286,7 +294,17 @@ package org.bigbluebutton.modules.videoconf.business
 			ns.addEventListener( IOErrorEvent.IO_ERROR, onIOError );
 			ns.addEventListener( AsyncErrorEvent.ASYNC_ERROR, onAsyncError );
 			ns.client = this;
-			ns.attachCamera(e.camera);
+			if (e.isDeskcapture)
+			{
+				deskcaptureStream = e.stream;
+				ExternalInterface.call("connectOBStray", "localhost", _url, deskcaptureStream);
+				LogUtil.debug("======> StartPublishing VideoProxy");
+				ns.play(deskcaptureStream);
+			}
+			else
+			{
+				ns.attachCamera(e.camera);
+			}
 //		Uncomment if you want to build support for H264. But you need at least FP 11. (ralam july 23, 2011)	
 //			if (Capabilities.version.search("11,0") != -1) {
 			if ((BBB.getFlashPlayerVersion() >= 11) && e.videoProfile.enableH264) {
@@ -322,23 +340,38 @@ package org.bigbluebutton.modules.videoconf.business
 				h264.setProfileLevel(h264profile, h264Level);
 				ns.videoStreamSettings = h264;
 			}
-			
-			ns.publish(e.stream);
+			if (!(e.isDeskcapture))
+			{
+				ns.publish(e.stream);
+			}
 			camerasPublishing[e.stream] = ns;
 		}
 		
 		public function stopBroadcasting(stream:String):void{
       trace("Closing netstream for webcam publishing");
-      			if (camerasPublishing[stream] != null) {
-	      			var ns:NetStream = camerasPublishing[stream];
-				ns.attachCamera(null);
-				ns.close();
-				ns = null;
-				delete camerasPublishing[stream];
-			}	
+      		if (deskcaptureStream == stream)
+      		{
+				ExternalInterface.call("stopOBS");
+				deskcaptureStream = null;
+      		}
+      		else
+      		{
+				if (camerasPublishing[stream] != null) {
+		      		var ns:NetStream = camerasPublishing[stream];
+					ns.attachCamera(null);
+					ns.close();
+					ns = null;
+					delete camerasPublishing[stream];
+				}
+			}
 		}
 
 		public function stopAllBroadcasting():void {
+			if (deskcaptureStream != null)
+      		{
+				ExternalInterface.call("stopOBS");
+				deskcaptureStream = null;
+      		}
 			for each (var ns:NetStream in camerasPublishing)
 			{
 				ns.attachCamera(null);

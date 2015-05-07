@@ -114,7 +114,7 @@ class SessionSVC(sessionManager:SessionManagerSVC, room: String, screenDim: Dime
 		  case Some(s) => stream = s; return true
 		}
 	}
- 
+	 
 	private def initialize() {
 		log.debug("Session: Starting session %s", room)
 		blockManager.initialize()	

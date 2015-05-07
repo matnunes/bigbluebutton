@@ -33,6 +33,7 @@ class SessionManagerGateway(streamManager: StreamManager, keyFrameInterval: Int,
   sessionManager.start 
   
 	def createSession(room: String, screenDim: org.bigbluebutton.deskshare.common.Dimension, blockDim: org.bigbluebutton.deskshare.common.Dimension, seqNum: Int, useSVC2: Boolean): Unit = {
+		log.info("============> SessionManagerGateway:createSession for %s", room)
 		log.info("SessionManagerGateway:createSession for %s", room)
 		sessionManager ! new CreateSession(room, new Dimension(screenDim.getWidth(), screenDim.getHeight()), 
 	                                       new Dimension(blockDim.getWidth(), blockDim.getHeight()), seqNum, useSVC2)
@@ -56,8 +57,14 @@ class SessionManagerGateway(streamManager: StreamManager, keyFrameInterval: Int,
 	  log.info("SessionManagerGateway:sendKeyFrame for %s", room)
 	  sessionManager ! new SendKeyFrame(room)
 	}
+
+	// def closeConnectionStream(room: String) {
+ //      log.info("SessionManagerGateway:closeConnectionStream for %s", room)
+	//   sessionManager ! new DisconnectStream(room)
+	// }
 	
 	def stopSharingDesktop(meetingId: String, stream: String) {
+	  log.info("============> SessionManagerGateway:stopSharingDesktop for %s", meetingId)
 	  sessionManager ! new StopSharingDesktop(meetingId, stream)
 	}
 	

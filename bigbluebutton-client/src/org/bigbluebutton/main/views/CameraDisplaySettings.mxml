@@ -42,6 +42,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 		import org.bigbluebutton.core.model.VideoProfile;
 		import org.bigbluebutton.main.events.BBBEvent;
 		import org.bigbluebutton.util.i18n.ResourceUtil;
+		import org.bigbluebutton.modules.videoconf.events.StartBroadcastEvent;
 		
 		static public var PADDING_HORIZONTAL:Number = 6;
 		static public var PADDING_VERTICAL:Number = 29;
@@ -64,6 +65,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 		public const ON_STATE:Number = 1;
 
 		private var selectedCam:int;
+		private var selectedCamName:String;
 		private var aspectRatio:Number = 1;
 		
         [Bindable]private var baseIndex:int; 
@@ -77,7 +79,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
             
 			if(defaultCamera != null) {
 				var indexDefault:int = 0;
-				for (var i:int = 0; i < Camera.names.length; i++){
+				for (var i:int = 0; i < camerasArray.length; i++){
 					if(camerasArray[i].status == OFF_STATE) {
 						var myObj:Object = {}
 						myObj.label = camerasArray[i].label;
@@ -92,6 +94,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			} else {
 				cmbCameraSelector.selectedIndex = 0;
 			}
+
 			
 			var idx:int = 0;
 			var defaultProfile:VideoProfile = BBB.defaultVideoProfile;
@@ -110,7 +113,7 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 				showResControls(true);
 			}
 			
-			if (Camera.names.length > 1) {
+			if (camerasArray.length > 1) {
 				showVideoControls(true);
 			}
 			
@@ -133,10 +136,18 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			selectedVideoProfile = cmbVideoProfile.selectedItem.profile as VideoProfile;
 			if (camerasAvailable.length > cmbCameraSelector.selectedIndex) {
 				selectedCam = camerasAvailable.getItemAt(cmbCameraSelector.selectedIndex).index;
+				selectedCamName = camerasAvailable.getItemAt(cmbCameraSelector.selectedIndex).label;
 			} else {
 				selectedCam = -1;
 			}
 			setAspectRatio(selectedVideoProfile.width,selectedVideoProfile.height);
+			
+			if (camerasAvailable.getItemAt(cmbCameraSelector.selectedIndex).label == "Deskcapture") //case of desktop capturing
+			{
+				btnStartPublish.enabled = true;
+				selectedCamName = "Deskcapture";
+			}
+
 			_video.successCallback = function():void {
 				btnStartPublish.enabled = true;
 			}
@@ -161,7 +172,11 @@ with BigBlueButton; if not, see <http://www.gnu.org/licenses/>.
 			
 			var globalDispatcher:Dispatcher = new Dispatcher();
 			var camEvent:BBBEvent = new BBBEvent(BBBEvent.CAMERA_SETTING);
-			camEvent.payload.cameraIndex = selectedCam;
+//			if (selectedCamName == "Deskcapture")
+//				camEvent.payload.cameraIndex = 1001;
+//			else
+				camEvent.payload.cameraIndex = selectedCam;
+			camEvent.payload.cameraName = selectedCamName;
 			camEvent.payload.videoProfile = selectedVideoProfile;
 			camEvent.payload.publishInClient = publishInClient;
 			

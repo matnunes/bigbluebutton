@@ -64,7 +64,10 @@ package org.bigbluebutton.modules.deskshare.managers
 		
     public function handleStreamStoppedEvent():void {
       LogUtil.debug("Sending deskshare stopped command");
+      LogUtil.debug("=======> Sending deskshare stopped command");
       service.stopSharingDesktop(module.getRoom(), module.getRoom());
+      LogUtil.debug("=======> Sending handleViewWindowCloseEvent()");
+      viewWindowManager.handleViewWindowCloseEvent();		
     }
     
 		public function handleStreamStartedEvent(videoWidth:Number, videoHeight:Number):void {
