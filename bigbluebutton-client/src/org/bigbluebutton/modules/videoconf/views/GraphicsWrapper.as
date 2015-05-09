@@ -308,7 +308,7 @@ package org.bigbluebutton.modules.videoconf.views
                     LogUtil.debug("------------publishing OBS");
                     graphic.publishObs(_options, camIndex, videoProfile);
                 } else {
-                graphic.loadCamera(_options, camIndex, videoProfile, chromePermissionDenied);
+                graphic.loadCamera(_options, camIndex, videoProfile, false);
 				}
                 onChildAdd(event);
             });
@@ -359,7 +359,7 @@ package org.bigbluebutton.modules.videoconf.views
             }
 
             if (!alreadyPublishing) {
-                addCameraForHelper(userId, camIndex, videoProfile, chromeWebcamPermissionDenied);
+                addCameraForHelper(userId, camIndex, videoProfile);
             }
         }
 
